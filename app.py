@@ -4,92 +4,124 @@ from camera_input_live import camera_input_live
 from PIL import Image
 import io
 
-# 1. Seite konfigurieren
-st.set_page_config(page_title="NutriScan Pro", page_icon="🔍", layout="centered")
+# ==========================================
+# 1. SETUP & DESIGN
+# ==========================================
+st.set_page_config(page_title="NutriScan Safe", page_icon="🍏", layout="centered")
 
-# Design-Optimierung (CSS)
+# Schickes Design einfügen
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    .stButton>button { width: 100%; border-radius: 20px; border: none; background-color: #2ECC71; color: white; }
-    .stTextInput>div>div>input { border-radius: 15px; }
+    .main { background-color: #f0f2f6; }
+    .stAlert { border-radius: 15px; }
+    .stButton>button { width: 100%; border-radius: 20px; height: 3em; background-color: #2ECC71; color: white; font-weight: bold; }
+    .stTextInput>div>div>input { border-radius: 10px; border: 2px solid #2ECC71; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Team & Info in der Sidebar
+# ==========================================
+# 2. SIDEBAR (TEAM & INFO)
+# ==========================================
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3075/3075977.png", width=100)
 st.sidebar.title("NutriScan Pro")
-st.sidebar.subheader("Entwickler-Team")
-st.sidebar.write("• Maximilian Maier")
-st.sidebar.write("• Benjamin Mehling")
-st.sidebar.write("• Ben Henkel")
-st.sidebar.write("• Marius Boulos")
-st.sidebar.write("• Sophie Hartwig")
+st.sidebar.markdown("---")
+st.sidebar.subheader("🚀 Entwickler-Team")
+team = ["Maximilian Maier", "Benjamin Mehling", "Ben Henkel", "Marius Boulos", "Sophie Hartwig"]
+for member in team:
+    st.sidebar.write(f"✅ {member}")
 
-# 3. Hauptbereich & Sprache
-st.title("🍏 NutriScan")
-lang = st.radio("Sprache / Language", ["Deutsch", "English"], horizontal=True)
+st.sidebar.markdown("---")
+st.sidebar.info("Projekt: 10th Grade Chemistry/IT - Hanns-Seidel-Gymnasium")
 
+# ==========================================
+# 3. SPRACHE & ALLERGIE-PROFIL
+# ==========================================
+st.title("🍏 SafeScanning NutriScan")
+lang = st.radio("Sprache wählen / Choose Language", ["Deutsch", "English"], horizontal=True)
+
+# Übersetzungen
 if lang == "Deutsch":
-    t_profile = "Dein Allergie-Profil"
-    t_select = "Wähle deine Allergien:"
-    t_scan = "Barcode Live-Scanner"
-    t_manual = "Barcode manuell eingeben:"
-    t_safe = "✅ Sicher für dich!"
-    t_warn = "❌ WARNUNG: Enthält"
-    t_not_found = "Produkt nicht gefunden."
-    t_input_info = "Bitte eine gültige Nummer eingeben."
+    t = {
+        "profile": "Dein Allergie-Profil",
+        "select": "Wähle deine Unverträglichkeiten:",
+        "scan_title": "📸 Barcode Scanner",
+        "manual_title": "🔢 Manuelle Eingabe",
+        "placeholder": "Barcode-Nummer hier eintippen...",
+        "safe": "✅ Dieses Produkt ist SICHER für dich!",
+        "warn": "❌ ACHTUNG: Enthält kritische Stoffe:",
+        "not_found": "Produkt nicht in der Datenbank. Probiere '3017620425035' (Nutella).",
+        "net_error": "Datenbank-Verbindung eingeschränkt (Schul-WLAN?). Zeige Demo-Modus..."
+    }
 else:
-    t_profile = "Your Profile"
-    t_select = "Select your allergies:"
-    t_scan = "Live Barcode Scanner"
-    t_manual = "Enter barcode manually:"
-    t_safe = "✅ Safe for you!"
-    t_warn = "❌ WARNING: Contains"
-    t_not_found = "Product not found."
-    t_input_info = "Please enter a valid barcode number."
+    t = {
+        "profile": "Your Allergy Profile",
+        "select": "Select your intolerances:",
+        "scan_title": "📸 Barcode Scanner",
+        "manual_title": "🔢 Manual Entry",
+        "placeholder": "Type barcode number here...",
+        "safe": "✅ This product is SAFE for you!",
+        "warn": "❌ WARNING: Contains critical ingredients:",
+        "not_found": "Product not found. Try '3017620425035' (Nutella).",
+        "net_error": "Database connection limited. Showing demo mode..."
+    }
 
-with st.expander(t_profile, expanded=True):
-    allergies = st.multiselect(t_select, ["Gluten", "Lactose", "Fructose", "Nüsse", "Erdnüsse", "Soja", "Eier", "Fisch"])
+with st.expander(t["profile"], expanded=True):
+    user_allergies = st.multiselect(t["select"], 
+        ["Gluten", "Lactose", "Fructose", "Nüsse", "Erdnüsse", "Soja", "Eier", "Fisch", "Senf"])
 
-# 4. Live-Kamera-Vorschau (Optisches Feature für die Präsentation)
-st.subheader(t_scan)
-st.info("Kamera-Vorschau aktiv. Tippe den Barcode unten ein:")
-camera_input_live()
+# ==========================================
+# 4. SCANNER & INPUT
+# ==========================================
+st.subheader(t["scan_title"])
+st.write("Halte den Barcode in die Kamera oder tippe ihn unten ein.")
+camera_input_live() # Zeigt das Live-Bild
 
-# 5. Barcode Eingabe
-barcode = st.text_input(t_manual, value="", key="barcode_input")
+barcode = st.text_input(t["manual_title"], placeholder=t["placeholder"])
 
-# 6. Datenbank-Abfrage & Logik
-if barcode and len(barcode) > 5:
-    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-    try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            res = response.json()
-            if res.get("status") == 1:
-                prod = res["product"]
-                st.markdown(f"### {prod.get('product_name', 'Unbekanntes Produkt')}")
+# ==========================================
+# 5. DIE LOGIK (DATENBANK & CHECK)
+# ==========================================
+if barcode:
+    # Säuberung der Eingabe (nur Zahlen)
+    clean_barcode = "".join(filter(str.isdigit, barcode))
+    
+    if len(clean_barcode) > 7:
+        url = f"https://world.openfoodfacts.org/api/v2/product/{clean_barcode}.json"
+        
+        try:
+            # Versuch die echte Datenbank abzufragen
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            
+            if data.get("status") == 1:
+                product = data["product"]
+                p_name = product.get("product_name", "Unbekanntes Produkt")
+                p_img = product.get("image_front_url")
                 
-                if prod.get("image_front_url"):
-                    st.image(prod["image_front_url"], width=200)
-
-                # Inhaltsstoffe und Allergene prüfen
-                data = str(prod.get("ingredients_text", "")).lower() + str(prod.get("allergens_hierarchy", [])).lower()
-                found = [a for a in allergies if a.lower() in data]
-
+                # Inhaltsstoffe analysieren
+                ingreds = str(product.get("ingredients_text", "")).lower()
+                allerg_tags = str(product.get("allergens_hierarchy", [])).lower()
+                full_text = ingreds + allerg_tags
+                
+                st.divider()
+                st.subheader(f"Ergebnis für: {p_name}")
+                if p_img: st.image(p_img, width=200)
+                
+                # Allergie-Check
+                found = [a for a in user_allergies if a.lower() in full_text]
+                
                 if found:
-                    st.error(f"{t_warn} {', '.join(found)}!")
+                    st.error(f"{t['warn']} {', '.join(found)}")
                 else:
-                    st.success(t_safe)
+                    st.success(t["safe"])
             else:
-                st.warning(t_not_found)
-        else:
-            st.error("Datenbank-Verbindung fehlgeschlagen.")
-    except:
-        st.error("Netzwerk-Fehler.")
-else:
-    if barcode:
-        st.info(t_input_info)
-
-st.markdown("---")
-st.caption("NutriScan v2.0 | Team SafeScanning | Data by OpenFoodFacts")
+                st.warning(t["not_found"])
+                
+        except:
+            # NOTFALL-MODUS: Wenn das Schul-WLAN die API blockt
+            st.warning(t["net_error"])
+            
+            # Demo-Daten für Nutella (falls die Nummer eingegeben wird)
+            if clean_barcode == "3017620425035":
+                st.subheader("Ergebnis für: Nutella (Demo-Modus)")
+                st.image("
