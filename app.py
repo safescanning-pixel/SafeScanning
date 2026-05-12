@@ -1,5 +1,5 @@
 import streamlit as st
-from streamlit_barcode_scanner import st_barcode_scanner
+Scanner-Modul temporär deaktiviert für Stabilität
 import requests
 
 # 1. Grundkonfiguration der Seite
@@ -61,7 +61,7 @@ with st.expander(t["profile"], expanded=True):
 
 # 4. Scanner Bereich
 st.subheader(t["scan_now"])
-barcode = st_barcode_scanner()
+barcode = st.text_input("Barcode hier eingeben oder scannen")
 
 # 5. Logik & API Abfrage
 if barcode:
