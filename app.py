@@ -4,12 +4,9 @@ from camera_input_live import camera_input_live
 from PIL import Image
 import io
 
-# ==========================================
 # 1. SETUP & DESIGN
-# ==========================================
 st.set_page_config(page_title="NutriScan Safe", page_icon="🍏", layout="centered")
 
-# Schickes Design einfügen
 st.markdown("""
     <style>
     .main { background-color: #f0f2f6; }
@@ -19,10 +16,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. SIDEBAR (TEAM & INFO)
-# ==========================================
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3075/3075977.png", width=100)
+# 2. SIDEBAR
 st.sidebar.title("NutriScan Pro")
 st.sidebar.markdown("---")
 st.sidebar.subheader("🚀 Entwickler-Team")
@@ -30,16 +24,10 @@ team = ["Maximilian Maier", "Benjamin Mehling", "Ben Henkel", "Marius Boulos", "
 for member in team:
     st.sidebar.write(f"✅ {member}")
 
-st.sidebar.markdown("---")
-st.sidebar.info("Projekt: 10th Grade Chemistry/IT - Hanns-Seidel-Gymnasium")
-
-# ==========================================
-# 3. SPRACHE & ALLERGIE-PROFIL
-# ==========================================
+# 3. SPRACHE & PROFIL
 st.title("🍏 SafeScanning NutriScan")
-lang = st.radio("Sprache wählen / Choose Language", ["Deutsch", "English"], horizontal=True)
+lang = st.radio("Sprache wählen", ["Deutsch", "English"], horizontal=True)
 
-# Übersetzungen
 if lang == "Deutsch":
     t = {
         "profile": "Dein Allergie-Profil",
@@ -47,68 +35,52 @@ if lang == "Deutsch":
         "scan_title": "📸 Barcode Scanner",
         "manual_title": "🔢 Manuelle Eingabe",
         "placeholder": "Barcode-Nummer hier eintippen...",
-        "safe": "✅ Dieses Produkt ist SICHER für dich!",
-        "warn": "❌ ACHTUNG: Enthält kritische Stoffe:",
-        "not_found": "Produkt nicht in der Datenbank. Probiere '3017620425035' (Nutella).",
-        "net_error": "Datenbank-Verbindung eingeschränkt (Schul-WLAN?). Zeige Demo-Modus..."
+        "safe": "✅ Sicher für dich!",
+        "warn": "❌ ACHTUNG: Enthält:",
+        "not_found": "Produkt nicht gefunden.",
+        "net_error": "Datenbank-Fehler (Schul-WLAN?). Zeige Demo..."
     }
 else:
     t = {
-        "profile": "Your Allergy Profile",
+        "profile": "Your Profile",
         "select": "Select your intolerances:",
         "scan_title": "📸 Barcode Scanner",
         "manual_title": "🔢 Manual Entry",
-        "placeholder": "Type barcode number here...",
-        "safe": "✅ This product is SAFE for you!",
-        "warn": "❌ WARNING: Contains critical ingredients:",
-        "not_found": "Product not found. Try '3017620425035' (Nutella).",
-        "net_error": "Database connection limited. Showing demo mode..."
+        "placeholder": "Type barcode here...",
+        "safe": "✅ SAFE for you!",
+        "warn": "❌ WARNING: Contains:",
+        "not_found": "Product not found.",
+        "net_error": "Network error. Showing demo..."
     }
 
 with st.expander(t["profile"], expanded=True):
     user_allergies = st.multiselect(t["select"], 
-        ["Gluten", "Lactose", "Fructose", "Nüsse", "Erdnüsse", "Soja", "Eier", "Fisch", "Senf"])
+        ["Gluten", "Lactose", "Fructose", "Nüsse", "Erdnüsse", "Soja", "Eier", "Fisch"])
 
-# ==========================================
-# 4. SCANNER & INPUT
-# ==========================================
+# 4. SCANNER
 st.subheader(t["scan_title"])
-st.write("Halte den Barcode in die Kamera oder tippe ihn unten ein.")
-camera_input_live() # Zeigt das Live-Bild
+camera_input_live() 
 
 barcode = st.text_input(t["manual_title"], placeholder=t["placeholder"])
 
-# ==========================================
-# 5. DIE LOGIK (DATENBANK & CHECK)
-# ==========================================
+# 5. LOGIK
 if barcode:
-    # Säuberung der Eingabe (nur Zahlen)
-    clean_barcode = "".join(filter(str.isdigit, barcode))
+    clean_bc = "".join(filter(str.isdigit, barcode))
     
-    if len(clean_barcode) > 7:
-        url = f"https://world.openfoodfacts.org/api/v2/product/{clean_barcode}.json"
-        
+    if len(clean_bc) > 7:
+        url = f"https://world.openfoodfacts.org/api/v2/product/{clean_bc}.json"
         try:
-            # Versuch die echte Datenbank abzufragen
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=7)
             data = response.json()
             
             if data.get("status") == 1:
-                product = data["product"]
-                p_name = product.get("product_name", "Unbekanntes Produkt")
-                p_img = product.get("image_front_url")
+                prod = data["product"]
+                st.subheader(f"Ergebnis: {prod.get('product_name', 'Unbekannt')}")
+                if prod.get("image_front_url"):
+                    st.image(prod["image_front_url"], width=200)
                 
-                # Inhaltsstoffe analysieren
-                ingreds = str(product.get("ingredients_text", "")).lower()
-                allerg_tags = str(product.get("allergens_hierarchy", [])).lower()
-                full_text = ingreds + allerg_tags
-                
-                st.divider()
-                st.subheader(f"Ergebnis für: {p_name}")
-                if p_img: st.image(p_img, width=200)
-                
-                # Allergie-Check
-                found = [a for a in user_allergies if a.lower() in full_text]
+                txt = str(prod.get("ingredients_text", "")).lower() + str(prod.get("allergens_hierarchy", [])).lower()
+                found = [a for a in user_allergies if a.lower() in txt]
                 
                 if found:
                     st.error(f"{t['warn']} {', '.join(found)}")
@@ -116,12 +88,15 @@ if barcode:
                     st.success(t["safe"])
             else:
                 st.warning(t["not_found"])
-                
         except:
-            # NOTFALL-MODUS: Wenn das Schul-WLAN die API blockt
             st.warning(t["net_error"])
-            
-            # Demo-Daten für Nutella (falls die Nummer eingegeben wird)
-            if clean_barcode == "3017620425035":
-                st.subheader("Ergebnis für: Nutella (Demo-Modus)")
-                st.image("
+            if clean_bc == "3017620425035":
+                st.subheader("Nutella (Demo)")
+                st.image("https://images.openfoodfacts.org/images/products/301/762/042/5035/front_de.676.400.jpg", width=200)
+                if any(x in ["Nüsse", "Haselnuss"] for x in user_allergies):
+                    st.error(f"{t['warn']} Haselnüsse")
+                else:
+                    st.success(t["safe"])
+
+st.markdown("---")
+st.caption("NutriScan v2.0 | HSG 10a")
