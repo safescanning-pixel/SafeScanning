@@ -1,5 +1,4 @@
 import streamlit as st
-Scanner-Modul temporär deaktiviert für Stabilität
 import requests
 
 # 1. Grundkonfiguration der Seite
@@ -12,7 +11,8 @@ translations = {
         "profile": "Dein Profil",
         "select_all": "Wähle deine Allergien/Intoleranzen:",
         "lifestyle": "Lifestyle & Ernährung:",
-        "scan_now": "Produkt scannen",
+        "scan_now": "Produkt-Barcode",
+        "input_label": "Barcode hier eingeben oder mit Handy-Kamera scannen:",
         "result_safe": "✅ Sicher für dich!",
         "result_warn": "❌ ACHTUNG: Enthält ",
         "not_found": "Produkt nicht gefunden.",
@@ -24,7 +24,8 @@ translations = {
         "profile": "Your Profile",
         "select_all": "Select your allergies/intolerances:",
         "lifestyle": "Lifestyle & Diet:",
-        "scan_now": "Scan Product",
+        "scan_now": "Product Barcode",
+        "input_label": "Enter barcode here or scan with your phone camera:",
         "result_safe": "✅ Safe for you!",
         "result_warn": "❌ WARNING: Contains ",
         "not_found": "Product not found.",
@@ -59,9 +60,10 @@ with st.expander(t["profile"], expanded=True):
         ["Vegan", "Vegetarisch", "Halal"]
     )
 
-# 4. Scanner Bereich
+# 4. Barcode Eingabe Bereich
 st.subheader(t["scan_now"])
-barcode = st.text_input("Barcode hier eingeben oder scannen")
+# Wir nutzen text_input, da dies am stabilsten auf allen Geräten läuft
+barcode = st.text_input(t["input_label"])
 
 # 5. Logik & API Abfrage
 if barcode:
@@ -72,17 +74,17 @@ if barcode:
         if response.get("status") == 1:
             product = response["product"]
             p_name = product.get('product_name', 'Unbekanntes Produkt')
-            st.info(f"Gescant: **{p_name}**")
+            st.info(f"Produkt: **{p_name}**")
             
-            # Alle Inhaltsstoffe und Allergene in einen Text-String ziehen
+            # Daten für den Check sammeln
             ingred_text = str(product.get("ingredients_text", "")).lower()
             allergen_tags = str(product.get("allergens_hierarchy", [])).lower()
             combined_data = ingred_text + allergen_tags
             
             found = []
-            # Abgleich der Auswahl mit den Daten
+            # Abgleich der Auswahl
             for a in selected_allergies:
-                clean_a = a.split(" / ")[0].lower() # Nimmt den deutschen Teil zum Suchen
+                clean_a = a.split(" / ")[0].lower()
                 if clean_a in combined_data:
                     found.append(a)
             
@@ -92,7 +94,7 @@ if barcode:
             else:
                 st.success(t["result_safe"])
                 
-            # Produktbild anzeigen (falls vorhanden)
+            # Produktbild anzeigen
             img_url = product.get("image_front_url")
             if img_url:
                 st.image(img_url, width=150)
