@@ -17,12 +17,12 @@ st.markdown("""
    
     * { font-family: 'Inter', sans-serif; }
 
-    /* Hintergrund: White */
+    /* Hintergrund: Cyan */
     .stApp {
         background: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
-        color: #FFFFFF;
+        color: #e0ffff;
     }
-    #  #f8fafc
+    
     /* SideBar Styling */
     [data-testid="stSidebar"] {
         background-color: rgba(15, 23, 42, 0.8) !important;
