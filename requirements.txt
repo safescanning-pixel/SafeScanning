@@ -1,4 +1,4 @@
 streamlit
-st.camera_inpu()
+st.camera_input()
 requests
 pillow
