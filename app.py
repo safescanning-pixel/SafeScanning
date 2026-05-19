@@ -4,192 +4,358 @@ import streamlit.components.v1 as components
 from camera_input_live import camera_input_live
 
 # ==========================================
-# 1. SETUP & CLEAN UI DESIGN
+# 1. SETUP & ULTRA CLEAN UI DESIGN (Premium)
 # ==========================================
-st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="NutriScan Pro", page_icon="🛡️", layout="centered")
 
 st.markdown("""
     <style>
-    /* Absolut minimalistisches App-Design */
     .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
     header {visibility: hidden;}
    
     /* Moderne Tabs im iOS-Stil */
     .stTabs [data-baseweb="tab-list"] {
-        background-color: white; padding: 5px; border-radius: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03); gap: 5px; justify-content: center; margin-bottom: 20px;
+        background-color: white; padding: 6px; border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02); gap: 8px; justify-content: center; margin-bottom: 25px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 45px; border-radius: 15px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 15px;
+        height: 46px; border-radius: 18px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 20px;
+        border: none !important;
     }
     .stTabs [aria-selected="true"] { background-color: #E0E7FF !important; color: #4F46E5 !important; }
    
-    /* Cleane Karten (Cards) ohne dicke Rahmen */
+    /* Cleane White Cards */
     div[data-testid="stVerticalBlock"] > div[style*="border"] {
         background-color: white !important; border-radius: 24px !important;
         border: 1px solid #F3F4F6 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; padding: 25px !important;
+        margin-bottom: 15px;
     }
    
-    /* Toggles und Texte */
-    h1, h2, h3, h4 { color: #111827 !important; text-align: center; font-weight: 800; margin-bottom: 5px;}
-    p {text-align: center; color: #6B7280; margin-bottom: 20px;}
+    /* Typografie */
+    h1 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 32px; margin-bottom: 5px;}
+    h2 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 26px; margin-bottom: 5px;}
+    h3 { color: #111827 !important; text-align: left; font-weight: 700; font-size: 22px; margin-bottom: 10px;}
+    h4 { color: #111827 !important; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 15px !important;}
+    p {text-align: center; color: #6B7280; font-size: 15px; margin-bottom: 20px;}
    
-    /* Button Styling */
+    /* Buttons */
     .stButton>button {
-        background-color: #4F46E5 !important; color: white !important; border-radius: 18px !important;
-        height: 55px !important; width: 100% !important; font-weight: bold !important; border: none !important;
-        transition: 0.2s;
+        background-color: #4F46E5 !important; color: white !important; border-radius: 20px !important;
+        height: 50px !important; width: 100% !important; font-weight: 700 !important; font-size: 15px !important; border: none !important;
+        transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
     }
-    .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-2px); }
+    .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-1px); }
+   
+    /* History Buttons */
+    .stButton>button[data-testid="baseButton-secondary"] {
+        background-color: #F3F4F6 !important; color: #4B5563 !important; height: 38px !important; border-radius: 12px !important; font-size: 13px !important; box-shadow: none !important;
+    }
+   
+    /* Ergebnis-Boxen */
+    .result-box-safe { background-color: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 20px; padding: 20px; color: #065F46; }
+    .result-box-warn { background-color: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 20px; padding: 20px; color: #991B1B; }
     </style>
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. KONFETTI-FUNKTION (Custom JS)
+# 2. KONFETTI-ENGINE
 # ==========================================
 def throw_confetti():
     components.html(
         """
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
         <script>
-            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4F46E5', '#10B981', '#F59E0B'] });
+            confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 }, colors: ['#4F46E5', '#10B981', '#F59E0B'] });
         </script>
-        """,
-        height=0,
+        """, height=0,
     )
 
 # ==========================================
-# 3. SPEICHER & SPRACH-ENGINE
+# 3. GLOBAL STATE & SPRACHEN
 # ==========================================
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
+if 'cam_on' not in st.session_state: st.session_state.cam_on = False
+if 'history' not in st.session_state: st.session_state.history = []
+if 'manual_code' not in st.session_state: st.session_state.manual_code = ""
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, "fruktose": False, "gluten": False, "nuesse": False, "soja": False,
         "vegan": False, "vegetarisch": False, "halal": False, "koscher": False
     }
 
-# Wörterbuch für die Oberfläche
 ui = {
-    "Deutsch": {"t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "title": "Mein Schutzprofil", "sub": "Allergien & Lebensstil", "save": "Profil speichern", "scan_h": "Scanner", "scan_p": "Barcode scannen oder eingeben", "safe": "✅ PRODUKT SICHER!", "warn": "🛑 WARNUNG:"},
-    "English": {"t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "title": "My Protection Profile", "sub": "Allergies & Lifestyle", "save": "Save Profile", "scan_h": "Scanner", "scan_p": "Scan or enter barcode", "safe": "✅ PRODUCT SAFE!", "warn": "🛑 WARNING:"},
-    "Türkçe": {"t1": "👤 Profil", "t2": "📸 Tarayıcı", "t3": "⚙️ Ayarlar", "title": "Koruma Profilim", "sub": "Alerjiler ve Yaşam Tarzı", "save": "Profili Kaydet", "scan_h": "Tarayıcı", "scan_p": "Barkodu okut veya gir", "safe": "✅ ÜRÜN GÜVENLİ!", "warn": "🛑 UYARI:"},
-    "العربية": {"t1": "👤 ملفي", "t2": "📸 ماسح", "t3": "⚙️ إعدادات", "title": "ملف الحماية الخاص بي", "sub": "الحساسية ونمط الحياة", "save": "حفظ الملف", "scan_h": "الماسح الضوئي", "scan_p": "امسح أو أدخل الباركود", "safe": "✅ منتج آمن!", "warn": "🛑 تحذير:"},
-    "Español": {"t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "title": "Mi Perfil de Protección", "sub": "Alergias y Estilo de Vida", "save": "Guardar Perfil", "scan_h": "Escáner", "scan_p": "Escanear o ingresar código", "safe": "✅ ¡PRODUCTO SEGURO!", "warn": "🛑 ADVERTENCIA:"}
+    "Deutsch": {
+        "t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "t4": "ℹ️ Info",
+        "title": "Mein Schutzprofil", "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", "save": "Profil speichern",
+        "cat_allergy": "⚕️ Allergien & Intoleranzen", "cat_lifestyle": "🌱 Lebensstil & Religion",
+        "laktose": "🥛 Laktose / Milch", "fruktose": "🍎 Fruktose", "gluten": "🌾 Glutenfrei", "nuesse": "🥜 Nüsse / Erdnüsse", "soja": "🫘 Soja",
+        "vegan": "🌿 Vegan", "vegetarisch": "🧀 Vegetarisch", "halal": "☪️ Halal (حلال)", "koscher": "✡️ Koscher (כָּشֵׁר)",
+        "scan_h": "Scanner", "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
+        "btn_cam_start": "📸 Live-Kamera starten", "btn_cam_stop": "🛑 Kamera ausschalten",
+        "safe": "✅ PRODUKT GEEIGNET!", "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
+        "warn": "🛑 NICHT GEEIGNET!", "not_found": "⚠️ Produkt nicht gefunden.", "no_conn": "📡 Keine Verbindung zur Datenbank (Offline-Modus aktiv).",
+        "lang_select": "Wähle deine Sprache:", "saved_msg": "✅ Profil erfolgreich gespeichert!", "team_title": "👥 Entwickler-Team Klasse 10a",
+        "w_laktose": "🥛 Enthält Laktose/Milch", "w_fruktose": "🍎 Enthält Fruktose", "w_gluten": "🌾 Enthält Gluten", "w_nuesse": "🥜 Enthält Nüsse", "w_soja": "🫘 Enthält Soja",
+        "w_vegan": "🥩 Nicht Vegan", "w_vegetarisch": "🥩 Nicht Vegetarisch", "w_halal": "☪️ Nicht Halal-Konform", "w_koscher": "✡️ Nicht Koscher-Konform",
+        "placeholder": "Barcode eintippen (z.B. 3017620425035)", "hist_title": "🕒 Letzte Scans", "details": "🔬 Inhaltsstoffe & Analyse einsehen"
+    },
+    "English": {
+        "t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "t4": "ℹ️ Info",
+        "title": "My Protection Profile", "sub": "Configure your allergies and dietary preferences", "save": "Save Profile",
+        "cat_allergy": "⚕️ Allergies & Intolerances", "cat_lifestyle": "🌱 Lifestyle & Religion",
+        "laktose": "🥛 Lactose / Milk", "fruktose": "🍎 Fructose", "gluten": "🌾 Gluten-Free", "nuesse": "🥜 Nuts / Peanuts", "soja": "🫘 Soy",
+        "vegan": "🌿 Vegan", "vegetarisch": "🧀 Vegetarian", "halal": "☪️ Halal", "koscher": "✡️ Kosher",
+        "scan_h": "Scanner", "scan_p": "Use the camera or enter the code manually",
+        "btn_cam_start": "📸 Start Live Camera", "btn_cam_stop": "🛑 Turn Off Camera",
+        "safe": "✅ PRODUCT SAFE!", "safe_sub": "This product matches your protection profile perfectly.",
+        "warn": "🛑 NOT COMPATIBLE!", "not_found": "⚠️ Product not found.", "no_conn": "📡 No database connection (Offline Mode active).",
+        "lang_select": "Choose your language:", "saved_msg": "✅ Profile successfully saved!", "team_title": "👥 Developer Team Class 10a",
+        "w_laktose": "🥛 Contains Lactose/Milk", "w_fruktose": "🍎 Contains Fructose", "w_gluten": "🌾 Contains Gluten", "w_nuesse": "🥜 Contains Nuts", "w_soja": "🫘 Contains Soy",
+        "w_vegan": "🥩 Not Vegan", "w_vegetarisch": "🥩 Not Vegetarian", "w_halal": "☪️ Not Halal Compliant", "w_koscher": "✡️ Not Kosher Compliant",
+        "placeholder": "Type barcode (e.g. 3017620425035)", "hist_title": "🕒 Scan History", "details": "🔬 View Ingredients & Analysis"
+    },
+    "Türkçe": {
+        "t1": "👤 Profil", "t2": "📸 Tarayıcı", "t3": "⚙️ Ayarlar", "t4": "ℹ "Bilgi",
+        "title": "Koruma Profilim", "sub": "Alerjilerinizi ve diyet tercihlerinizi yapılandırın", "save": "Profili Kaydet",
+        "cat_allergy": "⚕️ Alerjiler ve İntoleranslar", "cat_lifestyle": "🌱 Yaşam Tarzı ve Din",
+        "laktose": "🥛 Laktoz / Süt", "fruktose": "🍎 Fruktoz", "gluten": "🌾 Glutensiz", "nuesse": "🥜 Kuruyemiş / Yer Fıstığı", "soja": "🫘 Soya",
+        "vegan": "🌿 Vegan", "vegetarisch": "🧀 Vejetaryen", "halal": "☪️ Helal", "koscher": "✡️ Koşer",
+        "scan_h": "Tarayıcı", "scan_p": "Kamerayı kullanın veya kodu manuel olarak girin",
+        "btn_cam_start": "📸 Canlı Kamerayı Başlat", "btn_cam_stop": "🛑 Kamerayı Kapat",
+        "safe": "✅ ÜRÜN GÜVENLİ!", "safe_sub": "Bu ürün koruma profilinizle tamamen eşleşiyor.",
+        "warn": "🛑 UYGUN DEĞİL!", "not_found": "⚠️ Ürün bulunamadı.", "no_conn": "📡 Veritabanı bağlantısı yok (Çevrimdışı Mod aktif).",
+        "lang_select": "Dilinizi seçin:", "saved_msg": "✅ Profil başarıyla kaydedildi!", "team_title": "👥 Geliştirici Ekibi Sınıf 10a",
+        "w_laktose": "🥛 Laktoz/Süt içerir", "w_fruktose": "🍎 Fruktoz içerir", "w_gluten": "🌾 Gluten içerir", "w_nuesse": "🥜 Kuruyemiş içerir", "w_soja": "🫘 Soya içerir",
+        "w_vegan": "🥩 Vegan Değil", "w_vegetarisch": "🥩 Vejetaryen Değil", "w_halal": "☪️ Helal Değil", "w_koscher": "✡️ Koşer Değil",
+        "placeholder": "Barkod yazın (örn. 3017620425035)", "hist_title": "🕒 Tarama Geçmişi", "details": "🔬 İçerik ve Analizi Görüntüle"
+    },
+    "العربية": {
+        "t1": "👤 ملفي", "t2": "📸 ماسح", "t3": "⚙️ إعدادات", "t4": "ℹ️ معلومات",
+        "title": "ملف الحماية الخاص بي", "sub": "قم بتكوين الحساسية وتفضيلاتك الغذائية", "save": "حفظ الملف",
+        "cat_allergy": "⚕️ الحساسية وعدم التحمل", "cat_lifestyle": "🌱 نمط الحياة والدين",
+        "laktose": "🥛 اللاكتوز / الحليب", "fruktose": "🍎 الفركتوز", "gluten": "🌾 خالي من الغلوتين", "nuesse": "🥜 المكسرات / الفول السوداني", "soja": "🫘 الصويا",
+        "vegan": "🌿 نباتي تام (Vegan)", "vegetarisch": "🧀 نباتي (Vegetarian)", "halal": "☪️ حلال", "koscher": "✡️ كوشر",
+        "scan_h": "الماسح الضوئي", "scan_p": "استخدم الكاميرا أو أدخل الرمز يدويًا",
+        "btn_cam_start": "📸 تشغيل الكاميرا الحية", "btn_cam_stop": "🛑 إيقاف الكاميرا",
+        "safe": "✅ المنتج آمن!", "safe_sub": "هذا المنتج يتوافق تمامًا مع ملف الحماية الخاص بك.",
+        "warn": "🛑 غير متوافق!", "not_found": "⚠️ لم يتم العثور على المنتج.", "no_conn": "📡 لا يوجد اتصال بقاعدة البيانات (الوضع غير المتصل نشط).",
+        "lang_select": "اختر لغتك:", "saved_msg": "✅ تم حفظ الملف بنجاح!", "team_title": "👥 فريق التطوير الصف 10a",
+        "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_gluten": "🌾 يحتوي على الغلوتين", "w_nuesse": "🥜 يحتوي على المكسرات", "w_soja": "🫘 يحتوي على الصويا",
+        "w_vegan": "🥩 ليس نباتياً تاماً", "w_vegetarisch": "🥩 ليس نباتياً", "w_halal": "☪️ غير متوافق مع الحلال", "w_koscher": "✡️ غير متوافق مع الكوشر",
+        "placeholder": "اكتب الباركود (مثال: 3017620425035)", "hist_title": "🕒 تاريخ المسح", "details": "🔬 عرض المكونات والتحليل"
+    },
+    "Español": {
+        "t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "t4": "ℹ️ Info",
+        "title": "Mi Perfil de Protección", "sub": "Configure sus alergias y preferencias dietéticas", "save": "Guardar Perfil",
+        "cat_allergy": "⚕️ Alergias e Intolerancias", "cat_lifestyle": "🌱 Estilo de Vida y Religión",
+        "laktose": "🥛 Lactosa / Leche", "fruktose": "🍎 Fructosa", "gluten": "🌾 Sin Gluten", "nuesse": "🥜 Frutos Secos / Cacahuetes", "soja": "🫘 Soja",
+        "vegan": "🌿 Vegano", "vegetarisch": "🧀 Vegetariano", "halal": "☪️ Halal", "koscher": "✡️ Kosher",
+        "scan_h": "Escáner", "scan_p": "Use la cámara o ingrese el código manualmente",
+        "btn_cam_start": "📸 Activar Cámara", "btn_cam_stop": "🛑 Apagar Cámara",
+        "safe": "✅ ¡PRODUCTO SEGURO!", "safe_sub": "Este producto coincide perfectamente con tu perfil.",
+        "warn": "🛑 ¡NO COMPATIBLE!", "not_found": "⚠️ Producto no encontrado.", "no_conn": "📡 Sin conexión a la base de datos (Modo Offline activo).",
+        "lang_select": "Elige tu idioma:", "saved_msg": "✅ ¡Perfil guardado con éxito!", "team_title": "👥 Equipo de Desarrollo Clase 10a",
+        "w_laktose": "🥛 Contiene Lactosa/Leche", "w_fruktose": "🍎 Contiene Fructosa", "w_gluten": "🌾 Contiene Gluten", "w_nuesse": "🥜 Contiene Frutos Secos", "w_soja": "🫘 Contiene Soja",
+        "w_vegan": "🥩 No es Vegano", "w_vegetarisch": "🥩 No es Vegetariano", "w_halal": "☪️ No es Halal", "w_koscher": "✡️ No es Kosher",
+        "placeholder": "Escriba el código (ej. 3017620425035)", "hist_title": "🕒 Historial de Scans", "details": "🔬 Ver Ingredientes y Análisis"
+    }
 }
 t = ui[st.session_state.lang]
 
 # ==========================================
-# 4. NAVIGATION
+# 4. OFFLINE BACKUP ENGINE (Sicherheit für die Präsentation)
 # ==========================================
-tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], "ℹ️ Info"])
+OFFLINE_DATA = {
+    "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
+    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"},
+    "4008400130723": {"product_name": "Hanuta", "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Weizenmehl (13,5%), Haselnüsse (13%), Süßmolkenpulver, fettarmer Kakao, Vollmilchschokolade, Magermilchpulver, Butterreinfett, Salz, Emulgator Sojalecithine.", "image_front_url": "https://world.openfoodfacts.org/images/products/400/840/013/0723/front_de.121.400.jpg"},
+    "4003050000551": {"product_name": "Haribo Goldbären", "ingredients_text": "Glukosesirup; Zucker; Gelatine; Dextrose; Fruchtsaft aus Fruchtsaftkonzentrat: Apfel, Erdbeere, Himbeere, Orange, Zitrone, Ananas; Säuerungsmittel: Citronensäure; Frucht- und Pflanzenkonzentrate; Aroma; Überzugsmittel: Bienenwachs weiß und gelb, Carnaubawachs.", "image_front_url": "https://world.openfoodfacts.org/images/products/400/305/000/0551/front_de.229.400.jpg"}
+}
 
-# --- TAB 1: PROFIL ---
+# ==========================================
+# 5. NAVIGATION (TABS)
+# ==========================================
+tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
+
+# --- TAB 1: MEIN SCHUTZPROFIL ---
 with tab_profil:
     st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['sub']}</p>", unsafe_allow_html=True)
    
     with st.container(border=True):
-        st.markdown("<h4>⚕️ Allergien & Intoleranzen</h4>", unsafe_allow_html=True)
-        st.session_state.profile["laktose"] = st.toggle("🥛 Laktose / Milch", value=st.session_state.profile["laktose"])
-        st.session_state.profile["fruktose"] = st.toggle("🍎 Fruktose", value=st.session_state.profile["fruktose"])
-        st.session_state.profile["gluten"] = st.toggle("🌾 Glutenfrei", value=st.session_state.profile["gluten"])
-        st.session_state.profile["nuesse"] = st.toggle("🥜 Nüsse / Erdnüsse", value=st.session_state.profile["nuesse"])
-        st.session_state.profile["soja"] = st.toggle("🫘 Soja", value=st.session_state.profile["soja"])
+        st.markdown(f"<h4>{t['cat_allergy']}</h4>", unsafe_allow_html=True)
+        st.session_state.profile["laktose"] = st.toggle(t["laktose"], value=st.session_state.profile["laktose"])
+        st.session_state.profile["fruktose"] = st.toggle(t["fruktose"], value=st.session_state.profile["fruktose"])
+        st.session_state.profile["gluten"] = st.toggle(t["gluten"], value=st.session_state.profile["gluten"])
+        st.session_state.profile["nuesse"] = st.toggle(t["nuesse"], value=st.session_state.profile["nuesse"])
+        st.session_state.profile["soja"] = st.toggle(t["soja"], value=st.session_state.profile["soja"])
        
     with st.container(border=True):
-        st.markdown("<h4>🌱 Lebensstil & Religion</h4>", unsafe_allow_html=True)
-        st.session_state.profile["vegan"] = st.toggle("🌿 Vegan", value=st.session_state.profile["vegan"])
-        st.session_state.profile["vegetarisch"] = st.toggle("🧀 Vegetarisch", value=st.session_state.profile["vegetarisch"])
-        st.session_state.profile["halal"] = st.toggle("☪️ Halal (حلال)", value=st.session_state.profile["halal"])
-        st.session_state.profile["koscher"] = st.toggle("✡️ Koscher (כָּשֵׁר)", value=st.session_state.profile["koscher"])
+        st.markdown(f"<h4>{t['cat_lifestyle']}</h4>", unsafe_allow_html=True)
+        st.session_state.profile["vegan"] = st.toggle(t["vegan"], value=st.session_state.profile["vegan"])
+        st.session_state.profile["vegetarisch"] = st.toggle(t["vegetarisch"], value=st.session_state.profile["vegetarisch"])
+        st.session_state.profile["halal"] = st.toggle(t["halal"], value=st.session_state.profile["halal"])
+        st.session_state.profile["koscher"] = st.toggle(t["koscher"], value=st.session_state.profile["koscher"])
 
     if st.button(f"💾 {t['save']}"):
-        st.success("✅ Gespeichert!")
+        st.success(t["saved_msg"])
 
-# --- TAB 2: SCANNER & LOGIK ---
+# --- TAB 2: SCANNER & INTEGRATED ENGINE ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
    
-    with st.container(border=True):
-        camera_input_live()
+    # Textfeld für manuelle Barcodes
+    barcode_input = st.text_input("Barcode Entry", value=st.session_state.manual_code, placeholder=t["placeholder"], label_visibility="collapsed")
+   
+    # Kamera intelligent triggern
+    if not barcode_input:
+        if not st.session_state.cam_on:
+            if st.button(t["btn_cam_start"]):
+                st.session_state.cam_on = True
+                st.rerun()
+        else:
+            if st.button(t["btn_cam_stop"]):
+                st.session_state.cam_on = False
+                st.rerun()
+            with st.container(border=True):
+                camera_input_live()
+    else:
+        st.session_state.cam_on = False
 
-    barcode_input = st.text_input("📝", placeholder="3017620425035", label_visibility="collapsed")
-
+    # Auswertung starten, wenn Code existiert
     if barcode_input:
         barcode = "".join(filter(str.isdigit, barcode_input))
        
         if len(barcode) >= 8:
-            with st.spinner("🔄 ..."):
-                headers = {'User-Agent': 'AllergyShieldPro/3.0'}
-                url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+            with st.spinner("🔍 ..."):
+                product = None
+                is_offline = False
                
+                # Versuch 1: Live-API Abfrage
                 try:
-                    response = requests.get(url, headers=headers, timeout=8)
-                   
+                    headers = {'User-Agent': 'NutriScanPro/5.0 (Windows; School Presentation Project)'}
+                    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+                    response = requests.get(url, headers=headers, timeout=5)
                     if response.status_code == 200 and response.json().get("status") == 1:
-                        data = response.json()
-                        product = data["product"]
+                        product = response.json()["product"]
+                except:
+                    pass # Geht automatisch über in den Offline-Check
+               
+                # Versuch 2: Offline-Fallback, falls Internet streikt oder Code bekannt ist
+                if not product and barcode in OFFLINE_DATA:
+                    product = OFFLINE_DATA[barcode]
+                    is_offline = True
+               
+                if product:
+                    # History verwalten
+                    p_name = product.get('product_name', 'Unknown')
+                    if {"name": p_name, "code": barcode} not in st.session_state.history:
+                        st.session_state.history.insert(0, {"name": p_name, "code": barcode})
+                        if len(st.session_state.history) > 4: st.session_state.history.pop()
+                   
+                    # Aufbau der Inhaltsstoff-Texte (Multi-Language)
+                    all_text = (
+                        str(product.get("ingredients_text", "")) + " " +
+                        str(product.get("ingredients_text_en", "")) + " " +
+                        str(product.get("ingredients_text_fr", "")) + " " +
+                        str(product.get("allergens_hierarchy", ""))
+                    ).lower()
+                   
+                    warnings = []
+                    p = st.session_state.profile
+                   
+                    # Profi-Abgleich mit Fremdsprachen
+                    if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "whey", "crème"]):
+                        warnings.append(t["w_laktose"])
+                    if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup", "syrup"]):
+                        warnings.append(t["w_fruktose"])
+                    if p["gluten"] and any(w in all_text for w in ["weizen", "wheat", "roggen", "gerste", "dinkel", "hafer", "gluten", "blé", "seigle"]):
+                        warnings.append(t["w_gluten"])
+                    if p["nuesse"] and any(w in all_text for w in ["nuss", "nut", "erdnuss", "peanut", "haselnuss", "mandel", "walnuss", "cacahuète", "amande"]):
+                        warnings.append(t["w_nuesse"])
+                    if p["soja"] and any(w in all_text for w in ["soja", "soy"]):
+                        warnings.append(t["w_soja"])
                        
-                        with st.container(border=True):
-                            st.markdown(f"<h3>{product.get('product_name', 'Unbekannt')}</h3>", unsafe_allow_html=True)
-                            if product.get("image_front_url"):
-                                st.image(product["image_front_url"], width=200)
+                    if p["vegan"] and any(w in all_text for w in ["milch", "milk", "lait", "ei ", "egg", "fleisch", "meat", "honig", "honey", "gelatine", "rind", "schwein", "pork", "beef", "viande", "porc"]):
+                        warnings.append(t["w_vegan"])
+                    if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "fisch", "fish", "gelatine", "schwein", "pork", "rind", "beef", "viande", "poisson", "karmin", "carmine"]):
+                        warnings.append(t["w_vegetarisch"])
+                   
+                    if p["halal"] and any(w in all_text for w in ["schwein", "pork", "porc", "alkohol", "alcohol", "wein", "wine", "gelatine", "e120", "karmin", "carmine"]):
+                        warnings.append(t["w_halal"])
+                    if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "krustentier", "shellfish", "gelatine", "karmin", "carmine", "porc"]):
+                        warnings.append(t["w_koscher"])
+                       
+                    # SPLIT SCREEN LAYOUT
+                    st.write("")
+                    col_left, col_right = st.columns([1.3, 1], gap="medium")
+                   
+                    with col_left:
+                        st.markdown(f"<h3>{p_name}</h3>", unsafe_allow_html=True)
+                        if warnings:
+                            st.markdown(f"""
+                            <div class="result-box-warn">
+                                <h3 style="color:#991B1B; margin:0;">{t['warn']}</h3>
+                                <p style="text-align:left; color:#991B1B; margin-top:10px; margin-bottom:0;">
+                                    {"<br>".join(["• " + w for w in warnings])}
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div class="result-box-safe">
+                                <h3 style="color:#065F46; margin:0;">{t['safe']}</h3>
+                                <p style="text-align:left; color:#065F46; margin-top:10px; margin-bottom:0;">{t['safe_sub']}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            throw_confetti()
                            
-                            all_text = (str(product.get("ingredients_text", "")) + str(product.get("allergens_hierarchy", ""))).lower()
-                            warnings = []
-                            p = st.session_state.profile
-                           
-                            # Die Analyse-Datenbank
-                            if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne"]):
-                                warnings.append("🥛 Enthält Laktose/Milch")
-                            if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]):
-                                warnings.append("🍎 Enthält Fruktose")
-                            if p["gluten"] and any(w in all_text for w in ["weizen", "wheat", "roggen", "gerste", "dinkel", "hafer", "gluten"]):
-                                warnings.append("🌾 Enthält Gluten")
-                            if p["nuesse"] and any(w in all_text for w in ["nuss", "nut", "erdnuss", "peanut", "haselnuss", "mandel", "walnuss"]):
-                                warnings.append("🥜 Enthält Nüsse")
-                            if p["soja"] and any(w in all_text for w in ["soja", "soy"]):
-                                warnings.append("🫘 Enthält Soja")
-                               
-                            if p["vegan"] and any(w in all_text for w in ["milch", "ei ", "egg", "fleisch", "meat", "honig", "gelatine", "huhn", "rind", "schwein"]):
-                                warnings.append("🥩 Nicht Vegan")
-                            if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "fisch", "gelatine", "huhn", "rind", "schwein", "karmin"]):
-                                warnings.append("🥩 Nicht Vegetarisch")
-                           
-                            # Religiöse Profile
-                            if p["halal"] and any(w in all_text for w in ["schwein", "pork", "porc", "alkohol", "alcohol", "wein", "wine", "gelatine", "e120", "karmin", "carmine"]):
-                                warnings.append("☪️ Nicht Halal-Konform")
-                            if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "krustentier", "shellfish", "gelatine", "karmin"]):
-                                warnings.append("✡️ Nicht Koscher-Konform")
-                               
-                            if warnings:
-                                st.error(f"### {t['warn']}")
-                                for w in warnings: st.markdown(f"- **{w}**")
-                            else:
-                                st.success(f"### {t['safe']}")
-                                throw_confetti() # Löst das Konfetti aus!
-                    else:
-                        st.warning("⚠️ Produkt nicht gefunden.")
-                except Exception as e:
-                    st.error("📡 Keine Verbindung.")
+                    with col_right:
+                        if product.get("image_front_url"):
+                            st.markdown("<div style='display: flex; justify-content: center; align-items: center; max-height: 220px; overflow:hidden; border-radius:15px;'>", unsafe_allow_html=True)
+                            st.image(product["image_front_url"], use_container_width=True)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                   
+                    # Detaillierte Zusatz-Informationen zum Aufklappen
+                    st.write("")
+                    with st.expander(t["details"]):
+                        if is_offline:
+                            st.caption("ℹ️ Offline-Modus Daten")
+                        st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+                else:
+                    st.error(t["no_conn"] if is_offline else t["not_found"])
+
+    # Verlauf (History) unter dem Scanner anzeigen
+    if st.session_state.history:
+        st.write("")
+        st.markdown(f"<h5>{t['hist_title']}</h5>", unsafe_allow_html=True)
+        h_cols = st.columns(len(st.session_state.history))
+        for idx, item in enumerate(st.session_state.history):
+            with h_cols[idx]:
+                if st.button(item["name"], key=f"hist_{idx}", use_container_width=True, type="secondary"):
+                    st.session_state.manual_code = item["code"]
+                    st.rerun()
 
 # --- TAB 3: EINSTELLUNGEN ---
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
-        st.markdown("<h4>🌐 Sprache / Language</h4>", unsafe_allow_html=True)
-        # Dropdown für Sprachen
-        new_lang = st.selectbox("Wähle deine Sprache:", ["Deutsch", "English", "Türkçe", "العربية", "Español"], index=["Deutsch", "English", "Türkçe", "العربية", "Español"].index(st.session_state.lang))
+        st.markdown(f"<h4>🌐 {t['lang_select']}</h4>", unsafe_allow_html=True)
+        new_lang = st.selectbox("Language Selection", ["Deutsch", "English", "Türkçe", "العربية", "Español"], index=["Deutsch", "English", "Türkçe", "العربية", "Español"].index(st.session_state.lang), label_visibility="collapsed")
         if new_lang != st.session_state.lang:
             st.session_state.lang = new_lang
-            st.rerun() # Lädt die App sofort neu, um die Sprache zu ändern
+            st.rerun()
 
 # --- TAB 4: INFO ---
 with tab_info:
     with st.container(border=True):
-        st.markdown("<h2>👥 Team 10a</h2>", unsafe_allow_html=True)
-        st.write("Maximilian Maier, Benjamin Mehling, Ben Henkel, Marius Boulos, Sophie Hartwig")
-        st.caption("Hanns-Seidel-Gymnasium | Data by OpenFoodFacts")
-
+        st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
+        st.divider()
+        st.write("👨‍💻 **Maximilian Maier**")
+        st.write("👨‍💻 **Benjamin Mehling**")
+        st.write("👨‍💻 **Ben Henkel**")
+        st.write("👨‍💻 **Marius Boulos**")
+        st.write("👩‍💻 **Sophie Hartwig**")
+        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg | Klasse 10a")
 
