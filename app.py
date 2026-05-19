@@ -7,7 +7,7 @@ import time
 # ==========================================
 # 1. ULTIMATIVE DESIGN-KONFIGURATION (CSS)
 # ==========================================
-st.set_page_config(page_title="NutriScan Ultra Pro", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="Safe-Scanning", page_icon="🛡️", layout="wide")
 
 # Hier programmieren wir das Design komplett selbst
 st.markdown("""
