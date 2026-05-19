@@ -293,9 +293,9 @@ with tab_info:
     with st.container(border=True):
         st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
         st.divider()
+        st.write("👨‍💻 **Marius Boulos**")
         st.write("👨‍💻 **Benjamin Mehling**")
-        st.write("👨‍💻 **Ben Henkel**")
-        st.write("👨‍💻 **Maximilian Maier**")
         st.write("👨‍💻 **Sophie Hartwig**")
-        st.write("👩‍💻 **Marius Boulos**")
-        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg | Klasse 10a")
+        st.write("👨‍💻 **Ben Henkel**")
+        st.write("👩‍💻 **Maximilian Maier**")
+        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg / Germany")
