@@ -20,7 +20,7 @@ st.markdown("""
     /* Hintergrund: Cyan */
     .stApp {
         background: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
-        color: #00FFFF;
+        color: #FFFFFF;
     }
     
     /* SideBar Styling */
