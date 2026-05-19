@@ -73,6 +73,15 @@ st.markdown("""
         0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
         100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.9); }
     }
+    @keyframes laser {
+        0% { top: 0%; }
+        50% { top: 100%; }
+        100% { top: 0%; }
+    }
+    .history-box {
+        padding: 12px; border-left: 4px solid #4F46E5; background-color: white;
+        margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -209,7 +218,7 @@ ui = {
     },
     "Polski": {
         "t1": "👤 Profil", "t2": "📸 Skaner", "t3": "⚙️ Ustawienia", "t4": "ℹ️ Info",
-        "title": "Mój Profil Ochronny", "sub": "Skonfiguruj swoje alergie i nietolerancje", "save": "Zapisz profil",
+        "title": "Mój Profil Ochronny", "sub": "Skonfiguruj swoje allergies i nietolerancje", "save": "Zapisz profil",
         "cat_allergy": "Nietolerancje i Alergeny", "cat_additives": "Dodatki", "cat_lifestyle": "Styl życia i Religia",
         "laktose": "Laktoza / Mleko", "fruktose": "Fruktoza", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Orzechy", "soja": "Soja", "erdnuesse": "Orzeszki ziemne",
@@ -243,7 +252,7 @@ ui = {
     },
     "Español": {
         "t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "t4": "ℹ️ Info",
-        "title": "Mi Perfil de Protección", "sub": "Configura tus alergias e intolerancias", "save": "Guardar Perfil",
+        "title": "Mi Perfil de Protection", "sub": "Configura tus allergies e intolerancias", "save": "Guardar Perfil",
         "cat_allergy": "Intolerancias y Alérgenos", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de vida",
         "laktose": "Lactosa / Leche", "fruktose": "Fructosa", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Frutos de cáscara", "soja": "Soja", "erdnuesse": "Cacahuetes",
@@ -317,8 +326,8 @@ t = ui.get(st.session_state.lang, ui["Deutsch"])
 # 4. OFFLINE BACKUP DATA
 # ==========================================
 OFFLINE_DATA = {
-    "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
-    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"}
+    "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "allergens": "en:milk, en:soybeans, en:nuts"},
+    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "allergens": ""}
 }
 
 # ==========================================
@@ -375,7 +384,6 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                # Native, stabile JavaScript Kamera-Engine mit exaktem UI-Overlay & Scan-Linie
                 components.html("""
                 <div id="scanner-container" style="position: relative; width: 100%; height: 280px; background: #000; border-radius: 20px; overflow: hidden;">
                     <div id="interactive" style="width: 100%; height: 100%;"></div>
@@ -384,7 +392,7 @@ with tab_scanner:
                         <div style="display: flex; height: 140px;">
                             <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
                             <div style="width: 260px; border: 3px solid #FFF; box-shadow: 0 0 15px rgba(255,255,255,0.3); position: relative; background: transparent;">
-                                <div style="position: absolute; width: 100%; height: 3px; background: #FFF; top: 0; left: 0; box-shadow: 0 0 10px #FFF; animation: laser 2s linear infinite;"></div>
+                                <div style="position: absolute; width: 100%; height: 3px; background: #FF3B30; top: 0; left: 0; box-shadow: 0 0 10px #FF3B30; animation: laser 2s linear infinite;"></div>
                             </div>
                             <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
                         </div>
@@ -406,158 +414,114 @@ with tab_scanner:
                     { facingMode: "environment" }, 
                     { fps: 20, qrbox: { width: 260, height: 140 } },
                     onScanSuccess,
-                    (errorMessage) => { /* Stille Aufzeichnung während des Suchens */ }
+                    (errorMessage) => { /* Stille Aufzeichnung */ }
                 ).catch((err) => { console.error(err); });
                 </script>
-                
-                <style>
-                @keyframes laser {
-                    0% { top: 0%; }
-                    50% { top: 100%; }
-                    100% { top: 0%; }
-                }
-                video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
-                </style>
                 """, height=300)
-    else:
-        st.session_state.cam_on = False
-
+                
+    # --- AUSWERTUNGSLOGIK & ABGLEICH ---
     if barcode_input:
-        barcode = "".join(filter(str.isdigit, barcode_input))
-        
-        if len(barcode) >= 8:
-            with st.spinner("🔍 ..."):
-                product = None
-                is_offline = False
-                
+        product_data = None
+        if barcode_input in OFFLINE_DATA:
+            product_data = OFFLINE_DATA[barcode_input]
+        else:
+            with st.spinner("🌍 Open Food Facts API wird abgefragt..."):
                 try:
-                    headers = {'User-Agent': 'AllergyShieldPro/5.0 (Windows; School Project)'}
-                    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-                    response = requests.get(url, headers=headers, timeout=5)
-                    if response.status_code == 200 and response.json().get("status") == 1:
-                        product = response.json()["product"]
+                    url = f"https://world.openfoodfacts.org/api/v0/product/{barcode_input}.json"
+                    res = requests.get(url).json()
+                    if res.get("status") == 1:
+                        product_data = res["product"]
                 except:
-                    pass
-                
-                if not product and barcode in OFFLINE_DATA:
-                    product = OFFLINE_DATA[barcode]
-                    is_offline = True
-                
-                if product:
-                    p_name = product.get('product_name', 'Unknown Product')
-                    if {"name": p_name, "code": barcode} not in st.session_state.history:
-                        st.session_state.history.insert(0, {"name": p_name, "code": barcode})
-                        if len(st.session_state.history) > 4: st.session_state.history.pop()
+                    st.error(t["no_conn"])
                     
-                    # Verbesserte & lückenlose API-Analyse (Text- + Tag-Strukturen)
-                    tags_text = " ".join(product.get("allergens_tags", [])) + " " + " ".join(product.get("ingredients_analysis_tags", [])) + " " + " ".join(product.get("labels_tags", []))
-                    all_text = (
-                        str(product.get("ingredients_text", "")) + " " + 
-                        str(product.get("ingredients_text_en", "")) + " " + 
-                        str(product.get("ingredients_text_fr", "")) + " " + 
-                        str(product.get("ingredients_text_de", "")) + " " + 
-                        tags_text
-                    ).lower()
-                    
-                    warnings = []
-                    p = st.session_state.profile
-                    
-                    # Überprüfungskriterien inkl. neuer Allergene
-                    if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "en:milk"]):
-                        warnings.append(t["w_laktose"])
-                    if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]):
-                        warnings.append(t["w_fruktose"])
-                    if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "tomate", "schokolade"]):
-                        warnings.append(t["w_histamin"])
-                    if p["sorbit"] and any(w in all_text for w in ["sorbit", "sorbitol", "e420"]):
-                        warnings.append(t["w_sorbit"])
-                    if p["gluten"] and any(w in all_text for w in ["gluten", "weizen", "wheat", "blé", "gerste", "barley", "roggen", "rye", "hafer", "oats", "en:gluten"]):
-                        warnings.append(t["w_gluten"])
-                    if p["nuesse"] and any(w in all_text for w in ["nuss", "nüsse", "nuts", "amande", "noix", "haselnuss", "walnuss", "cashew", "mandel", "en:nuts"]):
-                        warnings.append(t["w_nuesse"])
-                    if p["soja"] and any(w in all_text for w in ["soja", "soy", "soya", "en:soybeans"]):
-                        warnings.append(t["w_soja"])
-                    if p["erdnuesse"] and any(w in all_text for w in ["erdnuss", "erdnüsse", "peanut", "peanuts", "cacahuète", "en:peanuts"]):
-                        warnings.append(t["w_erdnuesse"])
-                    if p["sulfite"] and any(w in all_text for w in ["sulfit", "sulfite", "schwefeldioxid", "e220", "en:sulphites"]):
-                        warnings.append(t["w_sulfite"])
-                    if p["glutamat"] and any(w in all_text for w in ["glutamat", "glutamate", "hefeextrakt", "e621"]):
-                        warnings.append(t["w_glutamat"])
-                        
-                    if p["vegan"] and any(w in all_text for w in ["milch", "milk", "lait", "ei ", "egg", "oeuf", "fleisch", "meat", "viande", "honig", "honey", "miel", "gelatine", "en:non-vegetarian", "en:non-vegan"]):
-                        warnings.append(t["w_vegan"])
-                    if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "viande", "fisch", "fish", "poisson", "gelatine", "en:non-vegetarian"]):
-                        warnings.append(t["w_vegetarisch"])
-                    if p["halal"] and any(w in all_text for w in ["schwein", "pork", "porc", "alkohol", "alcohol"]):
-                        warnings.append(t["w_halal"])
-                    if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "porc", "schalentiere", "shrimp"]):
-                        warnings.append(t["w_koscher"])
-                        
-                    # SPLIT SCREEN LAYOUT
-                    st.write("")
-                    col_left, col_right = st.columns([1.3, 1], gap="medium")
-                    
-                    with col_left:
-                        st.markdown(f"<h3>{p_name}</h3>", unsafe_allow_html=True)
-                        if warnings:
-                            st.markdown(f"""
-                            <div class="result-box-warn">
-                                <h3 style="color:#991B1B; margin:0;">{t['warn']}</h3>
-                                <p style="text-align:left; color:#991B1B; margin-top:10px; margin-bottom:0; font-weight:600;">
-                                    {"<br>".join(["• " + w for w in warnings])}
-                                </p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                            <div class="result-box-safe">
-                                <h3 style="color:#065F46; margin:0;">{t['safe']}</h3>
-                                <p style="text-align:left; color:#065F46; margin-top:10px; margin-bottom:0; font-weight:600;">{t['safe_sub']}</p>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            throw_confetti()
+        if product_data:
+            p_name = product_data.get("product_name", "Unbekanntes Produkt")
+            ingredients = product_data.get("ingredients_text", "").lower()
+            allergens_tags = product_data.get("allergens", "").lower()
+            
+            # Schlüsselwort-Mapping für automatische Filterung
+            keywords = {
+                "laktose": ["laktose", "lactose", "milch", "milk", "butter", "sahne", "cream", "molke", "whey"],
+                "fruktose": ["fruktose", "fructose", "fruchtzucker"],
+                "histamin": ["histamin", "histamine", "hefe", "yeast", "schokolade", "chocolate", "tomate", "tomato", "wein", "wine", "käse", "cheese"],
+                "sorbit": ["sorbit", "sorbitol", "e420"],
+                "sulfite": ["sulfit", "sulfite", "sulphite", "schwefeldioxid", "e220", "e221", "e222", "e223", "e224"],
+                "glutamat": ["glutamat", "glutamate", "hefeextrakt", "e621"],
+                "gluten": ["gluten", "weizen", "wheat", "gerste", "barley", "roggen", "rye", "hafer", "oat"],
+                "nuesse": ["nuss", "nüsse", "nuts", "haselnuss", "mandel", "almond", "walnuss", "cashew"],
+                "soja": ["soja", "soy", "soya", "lecithine"],
+                "erdnuesse": ["erdnuss", "erdnüsse", "peanut"],
+                "vegan": ["fleisch", "meat", "rind", "beef", "schwein", "pork", "huhn", "chicken", "gelatine", "fisch", "fish", "milch", "milk", "ei ", "egg", "honig", "honey"],
+                "vegetarisch": ["fleisch", "meat", "rind", "beef", "schwein", "pork", "huhn", "chicken", "gelatine", "fisch", "fish"],
+                "halal": ["schwein", "pork", "alkohol", "alcohol", "wein", "bier", "gelatine"],
+                "koscher": ["schwein", "pork", "meeresfrüchte", "seafood", "garnele", "shrimp", "gelatine"]
+            }
+            
+            triggered = []
+            for key, active in st.session_state.profile.items():
+                if active:
+                    for word in keywords.get(key, []):
+                        if word in ingredients or word in allergens_tags:
+                            triggered.append(t["w_" + key])
+                            break
                             
-                    with col_right:
-                        if product.get("image_front_url"):
-                            st.markdown("<div style='display: flex; justify-content: center; align-items: center; max-height: 220px; overflow:hidden; border-radius:15px;'>", unsafe_allow_html=True)
-                            st.image(product["image_front_url"], use_container_width=True)
-                            st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    st.write("")
-                    with st.expander(t["details"]):
-                        if is_offline: st.caption("ℹ️ Offline Fallback")
-                        st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
-                else:
-                    st.error(t["not_found"])
+            st.write(f"### {p_name}")
+            if not triggered:
+                throw_confetti()
+                st.markdown(f"""
+                    <div class="result-box-safe">
+                        <h4 style='margin:0; color:#065F46;'>{t['safe']}</h4>
+                        <p style='margin:5px 0 0 0; text-align:left; color:#065F46;'>{t['safe_sub']}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                icon = "🟢"
+            else:
+                list_items = "".join([f"<li style='text-align:left;'>{item}</li>" for item in triggered])
+                st.markdown(f"""
+                    <div class="result-box-warn">
+                        <h4 style='margin:0; color:#991B1B;'>{t['warn']}</h4>
+                        <ul style='margin-top:10px; padding-left:20px; color:#991B1B;'>{list_items}</ul>
+                    </div>
+                """, unsafe_allow_html=True)
+                icon = "🔴"
+                
+            history_entry = f"{icon} **{p_name}** ({barcode_input})"
+            if history_entry not in st.session_state.history:
+                st.session_state.history.insert(0, history_entry)
+                
+            with st.expander(t["details"]):
+                st.write(product_data.get("ingredients_text", "Keine Zutatenliste verfügbar."))
+        else:
+            st.error(t["not_found"])
 
-    # --- SCAN HISTORIE ---
     if st.session_state.history:
-        st.write("")
-        st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
-        for item in st.session_state.history:
-            if st.button(f"▫️ {item['name']} ({item['code']})", key=f"hist_{item['code']}", help="Erneut prüfen"):
-                st.session_state.manual_code = item['code']
-                st.rerun()
+        st.write("---")
+        st.write(f"### {t['hist_title']}")
+        for entry in st.session_state.history[:5]:
+            st.markdown(f"<div class='history-box'>{entry}</div>", unsafe_allow_html=True)
 
 # --- TAB 3: EINSTELLUNGEN ---
 with tab_settings:
-    st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
-    with st.container(border=True):
-        st.markdown(f"<h4>🌐 {t['lang_select']}</h4>", unsafe_allow_html=True)
-        lang_list = ["Deutsch", "English", "日本語", "العربية", "简体中文", "Русский", "Polski", "Français", "Español", "Português", "ไทย", "한국어"]
-        new_lang = st.selectbox("Language Selection", lang_list, index=lang_list.index(st.session_state.lang), label_visibility="collapsed")
-        if new_lang != st.session_state.lang:
-            st.session_state.lang = new_lang
-            st.rerun()
+    st.write(f"### {t['t3']}")
+    selected_lang = st.selectbox(t["lang_select"], list(ui.keys()), index=list(ui.keys()).index(st.session_state.lang))
+    if selected_lang != st.session_state.lang:
+        st.session_state.lang = selected_lang
+        st.rerun()
 
 # --- TAB 4: INFO ---
 with tab_info:
-    with st.container(border=True):
-        st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
-        st.divider()
-        st.write("👨‍💻 **Marius Boulos**")
-        st.write("👨‍💻 **Benjamin Mehling**")
-        st.write("👨‍💻 **Sophie Hartwig**")
-        st.write("👨‍💻 **Ben Henkel**")
-        st.write("👩‍💻 **Maximilian Maier**")
-        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg / Germany")
+    st.markdown(f"<div style='text-align:center; padding:10px;'>", unsafe_allow_html=True)
+    st.write(f"### {t['team_title']}")
+    st.markdown("<h4 style='text-align:center; color:#4F46E5;'>Hanns-Seidel-Gymnasium Hösbach</h4>", unsafe_allow_html=True)
+    st.write("---")
+    
+    st.markdown("""
+    <div style='text-align: left; max-width: 300px; margin: 0 auto; font-size:16px; line-height:2;'>
+        👤 <b>Marius Boulos</b><br>
+        👤 <b>Benjamin Mehling</b><br>
+        👤 <b>Sophie Hartwig</b><br>
+        👤 <b>Ben Henkel</b><br>
+        👤 <b>Maximilian Maier</b>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
