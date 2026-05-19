@@ -1,249 +1,259 @@
 import streamlit as st
 import requests
 from camera_input_live import camera_input_live
-from PIL import Image
-import time
 
 # ==========================================
-# 1. ULTIMATIVE DESIGN-KONFIGURATION (CSS)
+# 1. SETUP & MOBILE APP DESIGN (CSS)
 # ==========================================
-st.set_page_config(page_title="Safe-Scanning", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# Hier programmieren wir das Design komplett selbst
+# Custom CSS für das helle Thunkable "Card" Design
 st.markdown("""
     <style>
-    /* Google Fonts laden */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap');
-   
-    * { font-family: 'Inter', sans-serif; }
-
-    /* Hintergrund: Weiß */
+    /* Hintergrund der gesamten App (helles Grau wie in echten Apps) */
     .stApp {
-        background: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
-        color: #FFFFFF;
-    }
-    
-    /* SideBar Styling */
-    [data-testid="stSidebar"] {
-        background-color: rgba(224, 255, 255, 1.0) !important;
-        backdrop-filter: blur(15px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Gläserne Karten (Glassmorphism) */
-    .glass-card {
-        background: rgba(30, 41, 59, 0.5);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 25px;
-        margin-bottom: 20px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    }
-
-    /* Überschriften mit Gradient */
-    .main-title {
-        background: linear-gradient(90deg, #10b981, #3b82f6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3.5rem !important;
-        font-weight: 800 !important;
-        margin-bottom: 0px;
-    }
-
-    /* Custom Input Felder */
-    .stTextInput > div > div > input {
-        background-color: #0f172a !important;
-        color: #10b981 !important;
-        border: 2px solid #334155 !important;
-        border-radius: 12px !important;
-        font-size: 1.2rem !important;
-        padding: 15px !important;
+        background-color: #F4F6F9;
+        color: #1E293B;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
    
-    .stTextInput > div > div > input:focus {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
+    /* Header/Titel ausblenden für mehr App-Feeling */
+    header {visibility: hidden;}
+   
+    /* Tabs so stylen, dass sie wie eine Navigationsleiste aussehen */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: white;
+        padding: 10px;
+        border-radius: 20px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-around;
     }
-
-    /* Buttons */
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        border-radius: 10px;
+        color: #64748B;
+        font-weight: bold;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #EEF2FF !important;
+        color: #1D4ED8 !important; /* Blaues Active-Theme */
+    }
+   
+    /* Buttons (z.B. Profil speichern) wie auf dem Screenshot */
     .stButton>button {
-        background: linear-gradient(90deg, #10b981, #059669) !important;
+        background-color: #1D4ED8 !important; /* Royalblau */
         color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 20px !important;
+        border-radius: 15px !important;
+        height: 55px !important;
+        width: 100% !important;
+        font-size: 18px !important;
         font-weight: bold !important;
-        width: 100%;
-        transition: 0.3s all ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3) !important;
+        margin-top: 20px;
     }
     .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        background-color: #1E3A8A !important;
     }
 
-    /* Metrics & Badges */
-    [data-testid="stMetricValue"] {
-        color: #3b82f6 !important;
-        font-size: 2.5rem !important;
+    /* Container Boxen als weiße Karten mit Schatten */
+    div[data-testid="stVerticalBlock"] > div[style*="border"] {
+        background-color: white !important;
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+        padding: 20px !important;
     }
+
+    /* Toggles anpassen */
+    .stToggle { margin-bottom: 10px; }
+
+    /* Überschriften */
+    h1, h2, h3 { color: #0F172A !important; font-weight: 800 !important; text-align: center; }
+    h4 { color: #334155 !important; font-weight: 700 !important; margin-bottom: 15px !important;}
+    p { color: #64748B !important; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
+
 # ==========================================
-# 2. LOGIK & DATENBANK-ENGINE
+# 2. SESSION STATE (DATEN SPEICHERN)
 # ==========================================
-def get_product_data(barcode):
-    """Holt Daten mit professionellem Header gegen Blockierung"""
-    # Euer "digitaler Ausweis" für die Datenbank
-    headers = {
-        'User-Agent': 'NutriScanPro/3.0 (Windows NT 10.0; Win64; x64) EducationProject/1.0',
-        'From': 'hsg-projekt-10a@gymnasium.de'
+# Damit die App sich merkt, was du im Profil anklickst, wenn du zum Scanner gehst!
+if 'profile' not in st.session_state:
+    st.session_state.profile = {
+        "laktose": False, "fruktose": False, "histamin": False, "sorbit": False,
+        "sulfite": False, "glutamat": False,
+        "vegan": False, "vegetarisch": False
     }
-    url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        if r.status_code == 200:
-            return r.json()
-    except:
-        return None
-    return None
+
 
 # ==========================================
-# 3. SIDEBAR: TEAM & DASHBOARD
+# 3. NAVIGATION (TAB SYSTEM)
 # ==========================================
-with st.sidebar:
-    st.markdown("<h1 style='color:#10b981'>🛡️ SafeScanning</h1>", unsafe_allow_html=True)
-    st.markdown("---")
-   
-    st.subheader("🌐 Sprache / Language")
-    lang = st.segmented_control("Select", ["DE", "EN"], default="DE")
-   
-    st.markdown("---")
-    st.subheader("👥 Projektleitung: ")
-    st.info("Maximilian Maier\n\nBenjamin Mehling\n\nBen Henkel\n\nMarius Boulos\n\nSophie Hartwig")
-    st.subheader ("Location:")
-    st.info ("Hösbach, Germany")
-   
-    st.markdown("---")
-    st.caption("🚀 Powered by OpenFoodFacts API\nVersion 4.0 Gold Edition")
+tab_profil, tab_scanner, tab_info = st.tabs(["👤 Profil", "📸 Scanner", "ℹ️ Über uns"])
 
-# ==========================================
-# 4. HAUPTPAGE DESIGN
-# ==========================================
-st.markdown("<h1 class='main-title'>NutriScan Ultra Pro</h1>", unsafe_allow_html=True)
-st.markdown("<p style='font-size:1.2rem; color:#94a3b8;'>Die nächste Generation der Lebensmittel-Analyse.</p>", unsafe_allow_html=True)
+# ==============================================================================
+# TAB 1: MEIN SCHUTZPROFIL (Exakter Nachbau deiner Thunkable Screenshots)
+# ==============================================================================
+with tab_profil:
+    st.markdown("<h1>🛡️<br>Mein Schutzprofil</h1>", unsafe_allow_html=True)
+    st.markdown("<p>Konfigurieren Sie Ihre Allergien und Unverträglichkeiten</p>", unsafe_allow_html=True)
+    st.write("")
 
-# Layout Spalten
-col_setup, col_scanner = st.columns([1, 1.2], gap="large")
+    # KARTE 1: Intoleranzen
+    with st.container(border=True):
+        st.markdown("<h4>Intoleranzen</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Laktose**")
+        with col2: st.session_state.profile["laktose"] = st.toggle(" ", value=st.session_state.profile["laktose"], key="t_lak")
+       
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Fruktose**")
+        with col2: st.session_state.profile["fruktose"] = st.toggle(" ", value=st.session_state.profile["fruktose"], key="t_fruk")
+       
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Histamin**")
+        with col2: st.session_state.profile["histamin"] = st.toggle(" ", value=st.session_state.profile["histamin"], key="t_hist")
+       
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Sorbit**")
+        with col2: st.session_state.profile["sorbit"] = st.toggle(" ", value=st.session_state.profile["sorbit"], key="t_sorb")
 
-with col_setup:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.subheader("👤 Benutzer-Profil")
-   
-    # Allergien mit Icons
-    allergy_options = {
-        "Gluten": "🌾 Gluten", "Lactose": "🥛 Lactose", "Nüsse": "🥜 Nüsse",
-        "Soja": "🫘 Soja", "Eier": "🥚 Eier", "Fisch": "🐟 Fisch", "Senf": "🌭 Senf"
-    }
-    selected_keys = st.multiselect("Deine Unverträglichkeiten:", list(allergy_options.keys()))
-   
-    st.markdown("---")
-    st.subheader("🌱 Ernährung & Lifestyle")
-    diet = st.multiselect("Lebensweise:", ["Vegan", "Vegetarisch", "Palmöl-frei", "Kein Zuckerzusatz"])
-    st.markdown("</div>", unsafe_allow_html=True)
+    # KARTE 2: Zusatzstoffe
+    with st.container(border=True):
+        st.markdown("<h4>Zusatzstoffe</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Sulfite**")
+        with col2: st.session_state.profile["sulfite"] = st.toggle(" ", value=st.session_state.profile["sulfite"], key="t_sulf")
+       
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Glutamat**")
+        with col2: st.session_state.profile["glutamat"] = st.toggle(" ", value=st.session_state.profile["glutamat"], key="t_glut")
 
-with col_scanner:
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.subheader("📸 Live-Scan Terminal")
-    st.info("Scanner ist aktiv. Halte das Produkt vor die Linse.")
-   
-    # Live Kamera Fenster
-    camera_input_live()
-   
-    st.markdown("---")
-    barcode_input = st.text_input("🔢 Barcode Eingabe (EAN-13)", placeholder="Zahlen eintippen, z.B. 3017620425035")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # KARTE 3: Lebensstil
+    with st.container(border=True):
+        st.markdown("<h4>Lebensstil</h4>", unsafe_allow_html=True)
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Vegan**")
+        with col2: st.session_state.profile["vegan"] = st.toggle(" ", value=st.session_state.profile["vegan"], key="t_veg")
+       
+        col1, col2 = st.columns([3, 1])
+        with col1: st.write("**Vegetarisch**")
+        with col2: st.session_state.profile["vegetarisch"] = st.toggle(" ", value=st.session_state.profile["vegetarisch"], key="t_vege")
 
-# ==========================================
-# 5. ANALYSE & ERGEBNISSE
-# ==========================================
-if barcode_input:
-    # Nur Zahlen filtern
-    barcode = "".join(filter(str.isdigit, barcode_input))
-   
-    if len(barcode) >= 8:
-        with st.spinner('📡 Verbinde mit Datenbank...'):
-            data = get_product_data(barcode)
-           
-        if data and data.get("status") == 1:
-            p = data["product"]
-            st.markdown("---")
-           
-            res_col1, res_col2 = st.columns([1, 2])
-           
-            with res_col1:
-                # Produktbild mit Schatten
-                if p.get("image_front_url"):
-                    st.image(p["image_front_url"], use_container_width=True)
-                else:
-                    st.warning("Kein Bild verfügbar")
+    if st.button("💾 Profil speichern"):
+        st.success("✅ Profil erfolgreich in der App gespeichert! Wechsle nun zum Scanner.")
+
+
+# ==============================================================================
+# TAB 2: DER SCANNER & DIE LOGIK
+# ==============================================================================
+with tab_scanner:
+    st.markdown("<h2>📸 Scanner</h2>", unsafe_allow_html=True)
+    st.markdown("<p>Halte den Barcode in die Kamera oder tippe ihn ein.</p>", unsafe_allow_html=True)
+
+    with st.container(border=True):
+        # Hier ist die Live-Kamera!
+        st.info("Kamera aktiviert 🟢")
+        camera_input_live()
+
+    st.write("")
+    with st.container(border=True):
+        barcode_input = st.text_input("Oder Barcode manuell eingeben:", placeholder="z.B. 3017620425035")
+
+    # --- DIE INTELLIGENTE DATENBANK ABFRAGE ---
+    if barcode_input:
+        barcode = "".join(filter(str.isdigit, barcode_input))
+       
+        if len(barcode) >= 8:
+            st.divider()
+            with st.spinner("🔍 Suche Produkt in der Datenbank..."):
                
-                # Nutri-Score Badge
-                score = p.get('nutriscore_grade', 'unknown').upper()
-                score_colors = {"A": "#038141", "B": "#85bb2f", "C": "#fecb02", "D": "#ee8100", "E": "#e63e11"}
-                s_color = score_colors.get(score, "#334155")
-                st.markdown(f"<div style='background:{s_color}; padding:20px; border-radius:15px; text-align:center; font-size:2rem; font-weight:bold;'>Nutri-Score: {score}</div>", unsafe_allow_html=True)
-
-            with res_col2:
-                st.markdown(f"<h2 style='color:white;'>{p.get('product_name', 'Unbekanntes Produkt')}</h2>", unsafe_allow_html=True)
-                st.markdown(f"**Marke:** {p.get('brands', 'Nicht angegeben')}")
+                # Der "Anti-Blockier-Ausweis" für dein Glasfaser Internet
+                headers = {'User-Agent': 'AllergyShieldPro/1.0 (Windows; School Project)'}
+                url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
                
-                # INHALTSSTOFF-CHECKER (INTELLIGENT)
-                ingredients = (str(p.get("ingredients_text", "")) + str(p.get("allergens_hierarchy", []))).lower()
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                   
+                    if response.status_code == 200:
+                        data = response.json()
+                       
+                        if data.get("status") == 1:
+                            product = data["product"]
+                           
+                            # Produkt Karte anzeigen
+                            with st.container(border=True):
+                                st.markdown(f"<h3>{product.get('product_name', 'Unbekanntes Produkt')}</h3>", unsafe_allow_html=True)
+                               
+                                if product.get("image_front_url"):
+                                    st.image(product["image_front_url"], use_container_width=True)
+                               
+                                # Zutaten auslesen (alles kleingeschrieben für die Suche)
+                                ingredients_str = str(product.get("ingredients_text", "")).lower()
+                                allergens_str = str(product.get("allergens_hierarchy", [])).lower()
+                                all_text = ingredients_str + " " + allergens_str
+                               
+                                # === ABGLEICH MIT DEM PROFIL ===
+                                warnings = []
+                                prof = st.session_state.profile
+                               
+                                # Wörterbuch für die Suche (Deutsch, Englisch, Französisch)
+                                check_dict = {
+                                    "laktose": ["milch", "milk", "lait", "laktose", "lactose", "molke", "sahne", "butter", "käse"],
+                                    "fruktose": ["fruktose", "fructose", "fruchtzucker", "apfel", "birne", "honig", "sirup"],
+                                    "histamin": ["tomate", "wein", "spinat", "käse", "hefe", "fermentiert", "essig", "salami"],
+                                    "sorbit": ["sorbit", "sorbitol", "e420"],
+                                    "sulfite": ["sulfit", "sulfite", "e220", "e221", "e222", "e223", "e224", "e226", "e227", "e228", "schwefeldioxid"],
+                                    "glutamat": ["glutamat", "glutamate", "e621", "e622", "e623", "e624", "e625", "hefeextrakt"],
+                                    "vegan": ["milch", "milk", "ei ", "egg", "fleisch", "meat", "fisch", "fish", "honig", "gelatine", "huhn", "rind", "schwein"],
+                                    "vegetarisch": ["fleisch", "meat", "fisch", "fish", "gelatine", "huhn", "rind", "schwein"]
+                                }
+                               
+                                # Prüfen, ob die aktiven Profil-Schalter im Text gefunden werden
+                                for key, is_active in prof.items():
+                                    if is_active:
+                                        search_words = check_dict[key]
+                                        if any(word in all_text for word in search_words):
+                                            if key == "vegan" or key == "vegetarisch":
+                                                warnings.append(f"Nicht {key.capitalize()}")
+                                            else:
+                                                warnings.append(f"Enthält {key.capitalize()}")
+
+                                # ERGEBNIS ANZEIGEN
+                                st.write("")
+                                if len(warnings) > 0:
+                                    st.error("### 🛑 WARNUNG!")
+                                    st.write("Dieses Produkt passt **nicht** zu deinem Schutzprofil:")
+                                    for w in warnings:
+                                        st.markdown(f"- **{w}**")
+                                else:
+                                    st.success("### ✅ PRODUKT SICHER!")
+                                    st.write("Es wurden keine Konflikte mit deinem Schutzprofil gefunden.")
+                                    st.balloons()
+                        else:
+                            st.warning("⚠️ Produkt nicht gefunden. (Tipp für Nutella: 3017620425035)")
+                    else:
+                        st.error(f"Datenbank antwortet nicht. Fehler {response.status_code}")
                
-                found_hazards = []
-                # 1. Allergien checken
-                for a in selected_keys:
-                    if a.lower() in ingredients:
-                        found_hazards.append(f"⚠️ {a}")
-               
-                # 2. Lifestyle checken
-                if "Vegan" in diet:
-                    non_vegan = ["milch", "milk", "ei ", "egg", "fleisch", "meat", "fisch", "fish", "honig", "honey", "gelatine", "lactose"]
-                    if any(x in ingredients for x in non_vegan):
-                        found_hazards.append("🐄 Nicht Vegan")
-               
-                if "Palmöl-frei" in diet and "palm" in ingredients:
-                    found_hazards.append("🌴 Enthält Palmöl")
+                except Exception as e:
+                    st.error(f"Verbindungsfehler. Bitte Internet prüfen. Details: {e}")
 
-                # ERGEBNIS-BOX
-                if found_hazards:
-                    st.error("### 🛑 NICHT GEEIGNET")
-                    for h in found_hazards:
-                        st.markdown(f"<p style='font-size:1.5rem; color:#f87171;'>{h}</p>", unsafe_allow_html=True)
-                else:
-                    st.balloons()
-                    st.success("### ✅ SICHER FÜR DICH")
-                    st.markdown("<p style='font-size:1.5rem;'>Dieses Produkt entspricht deinem Profil.</p>", unsafe_allow_html=True)
-
-                # Zusatz-Stats
-                st.markdown("---")
-                m1, m2, m3 = st.columns(3)
-                m1.metric("Zucker", p.get('nutriments', {}).get('sugars_100g', '0') + "g")
-                m2.metric("Salz", p.get('nutriments', {}).get('salt_100g', '0') + "g")
-                m3.metric("Nova", f"Level {p.get('nova_group', '?')}")
-
-        else:
-            # FALLBACK / DEMO MODUS
-            if barcode == "3017620425035":
-                st.info("Datenbank-Timeout! Lade lokale Sicherheitskopie für Nutella...")
-                # Hier würde der Demo-Inhalt von vorhin stehen
-            else:
-                st.error("❌ Produkt nicht gefunden oder Datenbank überlastet.")
-                st.info("Tipp: Teste die App mit der Nummer 3017620425035")
-
-# Footer
-st.markdown("<br><br><center style='color:#475569'>NutriScan Ultra v4.0 Platinum Edition | Hanns-Seidel-Gymnasium 2026</center>", unsafe_allow_html=True)
+# ==============================================================================
+# TAB 3: ÜBER UNS
+# ==============================================================================
+with tab_info:
+    with st.container(border=True):
+        st.markdown("<h2>👥 Entwickler-Team</h2>", unsafe_allow_html=True)
+        st.markdown("<p>Hanns-Seidel-Gymnasium | Klasse 10a</p>", unsafe_allow_html=True)
+        st.divider()
+        st.write("👨‍💻 **Maximilian Maier**")
+        st.write("👨‍💻 **Benjamin Mehling**")
+        st.write("👨‍💻 **Ben Henkel**")
+        st.write("👨‍💻 **Marius Boulos**")
+        st.write("👩‍💻 **Sophie Hartwig**")
+       
+        st.info("Dieses Projekt nutzt die OpenFoodFacts API zur Analyse von über 2 Millionen Lebensmitteln.")
