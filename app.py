@@ -17,7 +17,7 @@ st.markdown("""
    
     * { font-family: 'Inter', sans-serif; }
 
-    /* Hintergrund: Cyan */
+    /* Hintergrund: Weiß */
     .stApp {
         background: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
         color: #FFFFFF;
@@ -25,7 +25,7 @@ st.markdown("""
     
     /* SideBar Styling */
     [data-testid="stSidebar"] {
-        background-color: rgba(15, 23, 42, 0.8) !important;
+        background-color: rgba(15, 66, 42, 0.8) !important;
         backdrop-filter: blur(15px);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
