@@ -25,7 +25,7 @@ st.markdown("""
     
     /* SideBar Styling */
     [data-testid="stSidebar"] {
-        background-color: rgba(15, 66, 42, 0.8) !important;
+        background-color: rgba(224, 255, 255, 1.0) !important;
         backdrop-filter: blur(15px);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
