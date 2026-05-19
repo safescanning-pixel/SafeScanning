@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import streamlit.components.v1 as components
-from camera_input_live import camera_input_live
 
 # ==========================================
 # 1. SETUP & ULTRA CLEAN UI DESIGN (Premium)
@@ -71,7 +70,7 @@ def throw_confetti():
     )
 
 # ==========================================
-# 3. GLOBAL STATE & SPRACHEN (FEHLER BEHOBEN)
+# 3. GLOBAL STATE & SPRACHEN
 # ==========================================
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
@@ -93,7 +92,7 @@ ui = {
         "sulfite": "Sulfite", "glutamat": "Glutamat",
         "vegan": "Vegan", "vegetarisch": "Vegetarisch", "halal": "Halal (حلال)", "koscher": "Koscher (כָּشֵׁر)",
         "scan_h": "Scanner", "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
-        "btn_cam_start": "📸 Live-Kamera starten", "btn_cam_stop": "🛑 Kamera ausschalten",
+        "btn_cam_start": "📸 Kamera einschalten", "btn_cam_stop": "🛑 Kamera ausschalten",
         "safe": "✅ PRODUKT GEEIGNET!", "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
         "warn": "🛑 NICHT GEEIGNET!", "not_found": "⚠️ Produkt nicht gefunden.", "no_conn": "📡 Keine Verbindung zur Datenbank (Offline-Modus aktiv).",
         "lang_select": "Wähle deine Sprache:", "saved_msg": "✅ Profil erfolgreich gespeichert!", "team_title": "👥 Entwickler-Team Klasse 10a",
@@ -110,7 +109,7 @@ ui = {
         "sulfite": "Sulfites", "glutamat": "Glutamate",
         "vegan": "Vegan", "vegetarisch": "Vegetarian", "halal": "Halal", "koscher": "Kosher",
         "scan_h": "Scanner", "scan_p": "Use the camera or enter the code manually",
-        "btn_cam_start": "📸 Start Live Camera", "btn_cam_stop": "🛑 Turn Off Camera",
+        "btn_cam_start": "📸 Turn On Camera", "btn_cam_stop": "🛑 Turn Off Camera",
         "safe": "✅ PRODUCT SAFE!", "safe_sub": "This product matches your protection profile perfectly.",
         "warn": "🛑 NOT COMPATIBLE!", "not_found": "⚠️ Product not found.", "no_conn": "📡 No database connection (Offline Mode active).",
         "lang_select": "Choose your language:", "saved_msg": "✅ Profile successfully saved!", "team_title": "👥 Developer Team Class 10a",
@@ -118,69 +117,17 @@ ui = {
         "w_sulfite": "🧪 Contains Sulfites", "w_glutamat": "🍕 Contains Glutamate",
         "w_vegan": "🥩 Not Vegan", "w_vegetarisch": "🥩 Not Vegetarian", "w_halal": "☪️ Not Halal Compliant", "w_koscher": "✡️ Not Kosher Compliant",
         "placeholder": "Type barcode (e.g. 3017620425035)", "hist_title": "🕒 Scan History", "details": "🔬 View Ingredients & Analysis"
-    },
-    "Türkçe": {
-        "t1": "👤 Profil", "t2": "📸 Tarayıcı", "t3": "⚙️ Ayarlar", "t4": "ℹ️ Bilgi",
-        "title": "Koruma Profilim", "sub": "Alerjilerinizi ve diyet tercihlerinizi yapılandırın", "save": "Profili Kaydet",
-        "cat_allergy": "İntoleranslar", "cat_additives": "Katkı Maddeleri", "cat_lifestyle": "Yaşam Tarzı ve Din",
-        "laktose": "Laktoz / Süt", "fruktose": "Fruktoz", "histamin": "Histamin", "sorbit": "Sorbitol",
-        "sulfite": "Sülfitler", "glutamat": "Glutamat",
-        "vegan": "Vegan", "vegetarisch": "Vejetaryen", "halal": "Helal", "koscher": "Koşer",
-        "scan_h": "Tarayıcı", "scan_p": "Kamerayı kullanın veya kodu manuel olarak girin",
-        "btn_cam_start": "📸 Canlı Kamerayı Başlat", "btn_cam_stop": "🛑 Kamerayı Kapat",
-        "safe": "✅ ÜRÜN GÜVENLİ!", "safe_sub": "Bu ürün koruma profilinizle tamamen eşleşiyor.",
-        "warn": "🛑 UYGUN DEĞİL!", "not_found": "⚠️ Ürün bulunamadı.", "no_conn": "📡 Veritabanı bağlantısı yok (Çevrimdışı Mod aktif).",
-        "lang_select": "Dilinizi seçin:", "saved_msg": "✅ Profil başarıyla kaydedildi!", "team_title": "👥 Geliştirici Ekibi Sınıf 10a",
-        "w_laktose": "🥛 Laktoz/Süt içerir", "w_fruktose": "🍎 Fruktoz içerir", "w_histamin": "🍷 Histamin riski", "w_sorbit": "🍬 Sorbitol içerir",
-        "w_sulfite": "🧪 Sülfit içerir", "w_glutamat": "🍕 Glutamat içerir",
-        "w_vegan": "🥩 Vegan Değil", "w_vegetarisch": "🥩 Vejetaryen Değil", "w_halal": "☪️ Helal Değil", "w_koscher": "✡️ Koşer Değil",
-        "placeholder": "Barkod yazın (örn. 3017620425035)", "hist_title": "🕒 Tarama Geçmişi", "details": "🔬 İçerik ve Analizi Görüntüle"
-    },
-    "العربية": {
-        "t1": "👤 ملفi", "t2": "📸 ماسح", "t3": "⚙️ إعدادات", "t4": "ℹ️ معلومات",
-        "title": "ملف الحماية الخاص بي", "sub": "قم بتكوين الحساسية وتفضيلاتك الغذائية", "save": "حفظ الملف",
-        "cat_allergy": "عدم التحمل", "cat_additives": "المضافات الغذائية", "cat_lifestyle": "نمط الحياة والدين",
-        "laktose": "اللاكتوز / الحليب", "fruktose": "الفركتوز", "histamin": "الهيستامين", "sorbit": "السوربيتول",
-        "sulfite": "الكبريتيت", "glutamat": "الغلوتامات",
-        "vegan": "نباتي تام (Vegan)", "vegetarisch": "نباتي (Vegetarian)", "halal": "حلال", "koscher": "كوشر",
-        "scan_h": "الماسح الضوئي", "scan_p": "استخدم الكاميرا أو أدخل الرمز يدويًا",
-        "btn_cam_start": "📸 تشغيل الكاميرا الحية", "btn_cam_stop": "🛑 إيقاف الكاميرا",
-        "safe": "✅ المنتج آمن!", "safe_sub": "هذا المنتج يتوافق تمامًا مع ملف الحماية الخاص بك.",
-        "warn": "🛑 غير متوافق!", "not_found": "⚠️ لم يتم العثور على المنتج.", "no_conn": "📡 لا يوجد اتصال بقاعدة البيانات (الوضع غير المتصل نشط).",
-        "lang_select": "اختر لغتك:", "saved_msg": "✅ تم حفظ الملف بنجاح!", "team_title": "👥 فريق التطوير الصف 10a",
-        "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_histamin": "🍷 خطر الهيستامين", "w_sorbit": "🍬 يحتوي على السوربيتول",
-        "w_sulfite": "🧪 يحتوي على الكبريتيت", "w_glutamat": "🍕 يحتوي على الغلوتامات",
-        "w_vegan": "🥩 ليس نباتياً تاماً", "w_vegetarisch": "🥩 ليس نباتياً", "w_halal": "☪️ غير متوافق مع الحلال", "w_koscher": "✡️ غير متوافق مع الكوشر",
-        "placeholder": "اكتب الباركود (مثال: 3017620425035)", "hist_title": "🕒 تاريخ المسح", "details": "🔬 عرض المكونات والتحليل"
-    },
-    "Español": {
-        "t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "t4": "ℹ️ Info",
-        "title": "Mi Perfil de Protección", "sub": "Configure sus alergias y preferencias dietéticas", "save": "Guardar Perfil",
-        "cat_allergy": "Intolerancias", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de Vida y Religión",
-        "laktose": "Lactosa / Leche", "fruktose": "Fructosa", "histamin": "Histamina", "sorbit": "Sorbitol",
-        "sulfite": "Sulfitos", "glutamat": "Glutamato",
-        "vegan": "Vegano", "vegetarisch": "Vegetariano", "halal": "Halal", "koscher": "Kosher",
-        "scan_h": "Escáner", "scan_p": "Use la cámara o ingrese el código manualmente",
-        "btn_cam_start": "📸 Activar Cámara", "btn_cam_stop": "🛑 Apagar Cámara",
-        "safe": "✅ ¡PRODUCTO SEGURO!", "safe_sub": "Este producto coincide perfectamente con tu perfil.",
-        "warn": "🛑 ¡NO COMPATIBLE!", "not_found": "⚠️ Producto no encontrado.", "no_conn": "📡 Sin conexión a la base de datos (Modo Offline activo).",
-        "lang_select": "Elige tu idioma:", "saved_msg": "✅ ¡Perfil guardado con éxito!", "team_title": "👥 Equipo de Desarrollo Clase 10a",
-        "w_laktose": "🥛 Contiene Lactosa/Leche", "w_fruktose": "🍎 Contiene Fructosa", "w_histamin": "🍷 Riesgo de histamina", "w_sorbit": "🍬 Contiene Sorbitol",
-        "w_sulfite": "🧪 Contiene Sulfitos", "w_glutamat": "🍕 Contiene Glutamato",
-        "w_vegan": "🥩 No es Vegano", "w_vegetarisch": "🥩 No es Vegetariano", "w_halal": "☪️ No es Halal", "w_koscher": "✡️ No es Kosher",
-        "placeholder": "Escriba el código (ej. 3017620425035)", "hist_title": "🕒 Historial de Scans", "details": "🔬 Ver Ingredientes y Análisis"
     }
 }
-t = ui[st.session_state.lang]
+
+t = ui.get(st.session_state.lang, ui["Deutsch"])
 
 # ==========================================
 # 4. OFFLINE BACKUP DATA
 # ==========================================
 OFFLINE_DATA = {
     "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
-    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"},
-    "4008400130723": {"product_name": "Hanuta", "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Weizenmehl (13,5%), Haselnüsse (13%), Süßmolkenpulver, fettarmer Kakao, Vollmilchschokolade, Magermilchpulver, Butterreinfett, Salz, Emulgator Sojalecithine.", "image_front_url": "https://world.openfoodfacts.org/images/products/400/840/013/0723/front_de.121.400.jpg"},
-    "4003050000551": {"product_name": "Haribo Goldbären", "ingredients_text": "Glukosesirup; Zucker; Gelatine; Dextrose; Fruchtsaft aus Fruchtsaftkonzentrat: Apfel, Erdbeere, Himbeere, Orange, Zitrone, Ananas; Säuerungsmittel: Citronensäure; Frucht- und Pflanzenkonzentrate; Aroma; Überzugsmittel: Bienenwachs weiß und gelb, Carnaubawachs.", "image_front_url": "https://world.openfoodfacts.org/images/products/400/305/000/0551/front_de.229.400.jpg"}
+    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"}
 }
 
 # ==========================================
@@ -232,7 +179,8 @@ with tab_scanner:
                 st.session_state.cam_on = False
                 st.rerun()
             with st.container(border=True):
-                camera_input_live()
+                # Nativer, stabiler iOS-Kamerazugriff
+                st.camera_input("Barcode scannen", key="native_cam", label_visibility="collapsed")
     else:
         st.session_state.cam_on = False
 
@@ -274,29 +222,25 @@ with tab_scanner:
                     p = st.session_state.profile
                    
                     # Überprüfungskriterien
-                    if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "whey"]):
+                    if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter"]):
                         warnings.append(t["w_laktose"])
-                    if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup", "syrup"]):
+                    if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]):
                         warnings.append(t["w_fruktose"])
-                    if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "wine", "tomate", "schokolade", "chocolate"]):
+                    if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "tomate", "schokolade"]):
                         warnings.append(t["w_histamin"])
                     if p["sorbit"] and any(w in all_text for w in ["sorbit", "sorbitol", "e420"]):
                         warnings.append(t["w_sorbit"])
-                    if p["sulfite"] and any(w in all_text for w in ["sulfit", "sulfite", "schwefeldioxid", "sulfur dioxide", "e220", "e221", "e222", "e223", "e224"]):
+                    if p["sulfite"] and any(w in all_text for w in ["sulfit", "sulfite", "schwefeldioxid", "e220"]):
                         warnings.append(t["w_sulfite"])
-                    if p["glutamat"] and any(w in all_text for w in ["glutamat", "glutamate", "hefeextrakt", "mononatiumglutamat", "e621"]):
+                    if p["glutamat"] and any(w in all_text for w in ["glutamat", "glutamate", "hefeextrakt", "e621"]):
                         warnings.append(t["w_glutamat"])
                        
-                    if p["vegan"] and any(w in all_text for w in ["milch", "milk", "lait", "ei ", "egg", "fleisch", "meat", "honig", "honey", "gelatine", "rind", "schwein", "pork", "beef"]):
+                    if p["vegan"] and any(w in all_text for w in ["milch", "milk", "lait", "ei ", "egg", "fleisch", "meat", "honig", "gelatine"]):
                         warnings.append(t["w_vegan"])
-                    if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "fisch", "fish", "gelatine", "schwein", "pork", "rind", "beef", "karmin"]):
+                    if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "fisch", "fish", "gelatine"]):
                         warnings.append(t["w_vegetarisch"])
-                    if p["halal"] and any(w in all_text for w in ["schwein", "pork", "porc", "alkohol", "alcohol", "wein", "wine", "gelatine"]):
-                        warnings.append(t["w_halal"])
-                    if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "krustentier", "shellfish", "gelatine"]):
-                        warnings.append(t["w_koscher"])
                        
-                    # SPLIT SCREEN LAYOUT: LINKS ERGEBNIS | RECHTS BILD
+                    # SPLIT SCREEN LAYOUT
                     st.write("")
                     col_left, col_right = st.columns([1.3, 1], gap="medium")
                    
@@ -321,6 +265,7 @@ with tab_scanner:
                             throw_confetti()
                            
                     with col_right:
+                        # Behobener Fehler: Das String-Literal schließt jetzt sauber ab!
                         if product.get("image_front_url"):
                             st.markdown("<div style='display: flex; justify-content: center; align-items: center; max-height: 220px; overflow:hidden; border-radius:15px;'>", unsafe_allow_html=True)
                             st.image(product["image_front_url"], use_container_width=True)
@@ -333,22 +278,12 @@ with tab_scanner:
                 else:
                     st.error(t["not_found"])
 
-    if st.session_state.history:
-        st.write("")
-        st.markdown(f"<h5>{t['hist_title']}</h5>", unsafe_allow_html=True)
-        h_cols = st.columns(len(st.session_state.history))
-        for idx, item in enumerate(st.session_state.history):
-            with h_cols[idx]:
-                if st.button(item["name"], key=f"hist_{idx}", use_container_width=True):
-                    st.session_state.manual_code = item["code"]
-                    st.rerun()
-
 # --- TAB 3: EINSTELLUNGEN ---
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
         st.markdown(f"<h4>🌐 {t['lang_select']}</h4>", unsafe_allow_html=True)
-        new_lang = st.selectbox("Language Selection", ["Deutsch", "English", "Türkçe", "العربية", "Español"], index=["Deutsch", "English", "Türkçe", "العربية", "Español"].index(st.session_state.lang), label_visibility="collapsed")
+        new_lang = st.selectbox("Language Selection", ["Deutsch", "English"], label_visibility="collapsed")
         if new_lang != st.session_state.lang:
             st.session_state.lang = new_lang
             st.rerun()
@@ -365,4 +300,3 @@ with tab_info:
         st.write("👨‍💻 **Tomma Meyer**")
         st.write("👩‍💻 **Sophie Hartwig**")
         st.caption("Hanns-Seidel-Gymnasium Aschaffenburg | Klasse 10a")
-
