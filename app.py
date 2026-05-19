@@ -63,7 +63,7 @@ st.markdown("""
    
     .stTextInput > div > div > input:focus {
         border-color: #10b981 !important;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
+        box-shadow: 0 0 15px rgba(16, 115, 129, 0.4) !important;
     }
 
     /* Buttons */
