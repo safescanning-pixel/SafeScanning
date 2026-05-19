@@ -115,15 +115,17 @@ def get_product_data(barcode):
 # 3. SIDEBAR: TEAM & DASHBOARD
 # ==========================================
 with st.sidebar:
-    st.markdown("<h1 style='color:#10b981'>🛡️ NutriScan</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#10b981'>🛡️ SafeScanning</h1>", unsafe_allow_html=True)
     st.markdown("---")
    
     st.subheader("🌐 Sprache / Language")
     lang = st.segmented_control("Select", ["DE", "EN"], default="DE")
    
     st.markdown("---")
-    st.subheader("👥 Projektleitung (10a)")
+    st.subheader("👥 Projektleitung: ")
     st.info("Maximilian Maier\n\nBenjamin Mehling\n\nBen Henkel\n\nMarius Boulos\n\nSophie Hartwig")
+    st.subheader ("Location:")
+    st.info ("Hösbach, Germany")
    
     st.markdown("---")
     st.caption("🚀 Powered by OpenFoodFacts API\nVersion 4.0 Gold Edition")
