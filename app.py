@@ -1,259 +1,195 @@
 import streamlit as st
 import requests
+import streamlit.components.v1 as components
 from camera_input_live import camera_input_live
 
 # ==========================================
-# 1. SETUP & MOBILE APP DESIGN (CSS)
+# 1. SETUP & CLEAN UI DESIGN
 # ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# Custom CSS für das helle Thunkable "Card" Design
 st.markdown("""
     <style>
-    /* Hintergrund der gesamten App (helles Grau wie in echten Apps) */
-    .stApp {
-        background-color: #F4F6F9;
-        color: #1E293B;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-   
-    /* Header/Titel ausblenden für mehr App-Feeling */
+    /* Absolut minimalistisches App-Design */
+    .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
     header {visibility: hidden;}
    
-    /* Tabs so stylen, dass sie wie eine Navigationsleiste aussehen */
+    /* Moderne Tabs im iOS-Stil */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: white;
-        padding: 10px;
-        border-radius: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        display: flex;
-        justify-content: space-around;
+        background-color: white; padding: 5px; border-radius: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03); gap: 5px; justify-content: center; margin-bottom: 20px;
     }
     .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        border-radius: 10px;
-        color: #64748B;
-        font-weight: bold;
+        height: 45px; border-radius: 15px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 15px;
     }
-    .stTabs [aria-selected="true"] {
-        background-color: #EEF2FF !important;
-        color: #1D4ED8 !important; /* Blaues Active-Theme */
+    .stTabs [aria-selected="true"] { background-color: #E0E7FF !important; color: #4F46E5 !important; }
+   
+    /* Cleane Karten (Cards) ohne dicke Rahmen */
+    div[data-testid="stVerticalBlock"] > div[style*="border"] {
+        background-color: white !important; border-radius: 24px !important;
+        border: 1px solid #F3F4F6 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; padding: 25px !important;
     }
    
-    /* Buttons (z.B. Profil speichern) wie auf dem Screenshot */
+    /* Toggles und Texte */
+    h1, h2, h3, h4 { color: #111827 !important; text-align: center; font-weight: 800; margin-bottom: 5px;}
+    p {text-align: center; color: #6B7280; margin-bottom: 20px;}
+   
+    /* Button Styling */
     .stButton>button {
-        background-color: #1D4ED8 !important; /* Royalblau */
-        color: white !important;
-        border-radius: 15px !important;
-        height: 55px !important;
-        width: 100% !important;
-        font-size: 18px !important;
-        font-weight: bold !important;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.3) !important;
-        margin-top: 20px;
+        background-color: #4F46E5 !important; color: white !important; border-radius: 18px !important;
+        height: 55px !important; width: 100% !important; font-weight: bold !important; border: none !important;
+        transition: 0.2s;
     }
-    .stButton>button:hover {
-        background-color: #1E3A8A !important;
-    }
-
-    /* Container Boxen als weiße Karten mit Schatten */
-    div[data-testid="stVerticalBlock"] > div[style*="border"] {
-        background-color: white !important;
-        border-radius: 20px !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-        padding: 20px !important;
-    }
-
-    /* Toggles anpassen */
-    .stToggle { margin-bottom: 10px; }
-
-    /* Überschriften */
-    h1, h2, h3 { color: #0F172A !important; font-weight: 800 !important; text-align: center; }
-    h4 { color: #334155 !important; font-weight: 700 !important; margin-bottom: 15px !important;}
-    p { color: #64748B !important; text-align: center; }
+    .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-2px); }
     </style>
     """, unsafe_allow_html=True)
 
+# ==========================================
+# 2. KONFETTI-FUNKTION (Custom JS)
+# ==========================================
+def throw_confetti():
+    components.html(
+        """
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        <script>
+            confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4F46E5', '#10B981', '#F59E0B'] });
+        </script>
+        """,
+        height=0,
+    )
 
 # ==========================================
-# 2. SESSION STATE (DATEN SPEICHERN)
+# 3. SPEICHER & SPRACH-ENGINE
 # ==========================================
-# Damit die App sich merkt, was du im Profil anklickst, wenn du zum Scanner gehst!
+if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'profile' not in st.session_state:
     st.session_state.profile = {
-        "laktose": False, "fruktose": False, "histamin": False, "sorbit": False,
-        "sulfite": False, "glutamat": False,
-        "vegan": False, "vegetarisch": False
+        "laktose": False, "fruktose": False, "gluten": False, "nuesse": False, "soja": False,
+        "vegan": False, "vegetarisch": False, "halal": False, "koscher": False
     }
 
+# Wörterbuch für die Oberfläche
+ui = {
+    "Deutsch": {"t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "title": "Mein Schutzprofil", "sub": "Allergien & Lebensstil", "save": "Profil speichern", "scan_h": "Scanner", "scan_p": "Barcode scannen oder eingeben", "safe": "✅ PRODUKT SICHER!", "warn": "🛑 WARNUNG:"},
+    "English": {"t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "title": "My Protection Profile", "sub": "Allergies & Lifestyle", "save": "Save Profile", "scan_h": "Scanner", "scan_p": "Scan or enter barcode", "safe": "✅ PRODUCT SAFE!", "warn": "🛑 WARNING:"},
+    "Türkçe": {"t1": "👤 Profil", "t2": "📸 Tarayıcı", "t3": "⚙️ Ayarlar", "title": "Koruma Profilim", "sub": "Alerjiler ve Yaşam Tarzı", "save": "Profili Kaydet", "scan_h": "Tarayıcı", "scan_p": "Barkodu okut veya gir", "safe": "✅ ÜRÜN GÜVENLİ!", "warn": "🛑 UYARI:"},
+    "العربية": {"t1": "👤 ملفي", "t2": "📸 ماسح", "t3": "⚙️ إعدادات", "title": "ملف الحماية الخاص بي", "sub": "الحساسية ونمط الحياة", "save": "حفظ الملف", "scan_h": "الماسح الضوئي", "scan_p": "امسح أو أدخل الباركود", "safe": "✅ منتج آمن!", "warn": "🛑 تحذير:"},
+    "Español": {"t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "title": "Mi Perfil de Protección", "sub": "Alergias y Estilo de Vida", "save": "Guardar Perfil", "scan_h": "Escáner", "scan_p": "Escanear o ingresar código", "safe": "✅ ¡PRODUCTO SEGURO!", "warn": "🛑 ADVERTENCIA:"}
+}
+t = ui[st.session_state.lang]
 
 # ==========================================
-# 3. NAVIGATION (TAB SYSTEM)
+# 4. NAVIGATION
 # ==========================================
-tab_profil, tab_scanner, tab_info = st.tabs(["👤 Profil", "📸 Scanner", "ℹ️ Über uns"])
+tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], "ℹ️ Info"])
 
-# ==============================================================================
-# TAB 1: MEIN SCHUTZPROFIL (Exakter Nachbau deiner Thunkable Screenshots)
-# ==============================================================================
+# --- TAB 1: PROFIL ---
 with tab_profil:
-    st.markdown("<h1>🛡️<br>Mein Schutzprofil</h1>", unsafe_allow_html=True)
-    st.markdown("<p>Konfigurieren Sie Ihre Allergien und Unverträglichkeiten</p>", unsafe_allow_html=True)
-    st.write("")
-
-    # KARTE 1: Intoleranzen
+    st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p>{t['sub']}</p>", unsafe_allow_html=True)
+   
     with st.container(border=True):
-        st.markdown("<h4>Intoleranzen</h4>", unsafe_allow_html=True)
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Laktose**")
-        with col2: st.session_state.profile["laktose"] = st.toggle(" ", value=st.session_state.profile["laktose"], key="t_lak")
+        st.markdown("<h4>⚕️ Allergien & Intoleranzen</h4>", unsafe_allow_html=True)
+        st.session_state.profile["laktose"] = st.toggle("🥛 Laktose / Milch", value=st.session_state.profile["laktose"])
+        st.session_state.profile["fruktose"] = st.toggle("🍎 Fruktose", value=st.session_state.profile["fruktose"])
+        st.session_state.profile["gluten"] = st.toggle("🌾 Glutenfrei", value=st.session_state.profile["gluten"])
+        st.session_state.profile["nuesse"] = st.toggle("🥜 Nüsse / Erdnüsse", value=st.session_state.profile["nuesse"])
+        st.session_state.profile["soja"] = st.toggle("🫘 Soja", value=st.session_state.profile["soja"])
        
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Fruktose**")
-        with col2: st.session_state.profile["fruktose"] = st.toggle(" ", value=st.session_state.profile["fruktose"], key="t_fruk")
-       
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Histamin**")
-        with col2: st.session_state.profile["histamin"] = st.toggle(" ", value=st.session_state.profile["histamin"], key="t_hist")
-       
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Sorbit**")
-        with col2: st.session_state.profile["sorbit"] = st.toggle(" ", value=st.session_state.profile["sorbit"], key="t_sorb")
-
-    # KARTE 2: Zusatzstoffe
     with st.container(border=True):
-        st.markdown("<h4>Zusatzstoffe</h4>", unsafe_allow_html=True)
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Sulfite**")
-        with col2: st.session_state.profile["sulfite"] = st.toggle(" ", value=st.session_state.profile["sulfite"], key="t_sulf")
-       
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Glutamat**")
-        with col2: st.session_state.profile["glutamat"] = st.toggle(" ", value=st.session_state.profile["glutamat"], key="t_glut")
+        st.markdown("<h4>🌱 Lebensstil & Religion</h4>", unsafe_allow_html=True)
+        st.session_state.profile["vegan"] = st.toggle("🌿 Vegan", value=st.session_state.profile["vegan"])
+        st.session_state.profile["vegetarisch"] = st.toggle("🧀 Vegetarisch", value=st.session_state.profile["vegetarisch"])
+        st.session_state.profile["halal"] = st.toggle("☪️ Halal (حلال)", value=st.session_state.profile["halal"])
+        st.session_state.profile["koscher"] = st.toggle("✡️ Koscher (כָּשֵׁר)", value=st.session_state.profile["koscher"])
 
-    # KARTE 3: Lebensstil
-    with st.container(border=True):
-        st.markdown("<h4>Lebensstil</h4>", unsafe_allow_html=True)
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Vegan**")
-        with col2: st.session_state.profile["vegan"] = st.toggle(" ", value=st.session_state.profile["vegan"], key="t_veg")
-       
-        col1, col2 = st.columns([3, 1])
-        with col1: st.write("**Vegetarisch**")
-        with col2: st.session_state.profile["vegetarisch"] = st.toggle(" ", value=st.session_state.profile["vegetarisch"], key="t_vege")
+    if st.button(f"💾 {t['save']}"):
+        st.success("✅ Gespeichert!")
 
-    if st.button("💾 Profil speichern"):
-        st.success("✅ Profil erfolgreich in der App gespeichert! Wechsle nun zum Scanner.")
-
-
-# ==============================================================================
-# TAB 2: DER SCANNER & DIE LOGIK
-# ==============================================================================
+# --- TAB 2: SCANNER & LOGIK ---
 with tab_scanner:
-    st.markdown("<h2>📸 Scanner</h2>", unsafe_allow_html=True)
-    st.markdown("<p>Halte den Barcode in die Kamera oder tippe ihn ein.</p>", unsafe_allow_html=True)
-
+    st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
+   
     with st.container(border=True):
-        # Hier ist die Live-Kamera!
-        st.info("Kamera aktiviert 🟢")
         camera_input_live()
 
-    st.write("")
-    with st.container(border=True):
-        barcode_input = st.text_input("Oder Barcode manuell eingeben:", placeholder="z.B. 3017620425035")
+    barcode_input = st.text_input("📝", placeholder="3017620425035", label_visibility="collapsed")
 
-    # --- DIE INTELLIGENTE DATENBANK ABFRAGE ---
     if barcode_input:
         barcode = "".join(filter(str.isdigit, barcode_input))
        
         if len(barcode) >= 8:
-            st.divider()
-            with st.spinner("🔍 Suche Produkt in der Datenbank..."):
-               
-                # Der "Anti-Blockier-Ausweis" für dein Glasfaser Internet
-                headers = {'User-Agent': 'AllergyShieldPro/1.0 (Windows; School Project)'}
+            with st.spinner("🔄 ..."):
+                headers = {'User-Agent': 'AllergyShieldPro/3.0'}
                 url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
                
                 try:
-                    response = requests.get(url, headers=headers, timeout=10)
+                    response = requests.get(url, headers=headers, timeout=8)
                    
-                    if response.status_code == 200:
+                    if response.status_code == 200 and response.json().get("status") == 1:
                         data = response.json()
+                        product = data["product"]
                        
-                        if data.get("status") == 1:
-                            product = data["product"]
+                        with st.container(border=True):
+                            st.markdown(f"<h3>{product.get('product_name', 'Unbekannt')}</h3>", unsafe_allow_html=True)
+                            if product.get("image_front_url"):
+                                st.image(product["image_front_url"], width=200)
                            
-                            # Produkt Karte anzeigen
-                            with st.container(border=True):
-                                st.markdown(f"<h3>{product.get('product_name', 'Unbekanntes Produkt')}</h3>", unsafe_allow_html=True)
+                            all_text = (str(product.get("ingredients_text", "")) + str(product.get("allergens_hierarchy", ""))).lower()
+                            warnings = []
+                            p = st.session_state.profile
+                           
+                            # Die Analyse-Datenbank
+                            if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne"]):
+                                warnings.append("🥛 Enthält Laktose/Milch")
+                            if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]):
+                                warnings.append("🍎 Enthält Fruktose")
+                            if p["gluten"] and any(w in all_text for w in ["weizen", "wheat", "roggen", "gerste", "dinkel", "hafer", "gluten"]):
+                                warnings.append("🌾 Enthält Gluten")
+                            if p["nuesse"] and any(w in all_text for w in ["nuss", "nut", "erdnuss", "peanut", "haselnuss", "mandel", "walnuss"]):
+                                warnings.append("🥜 Enthält Nüsse")
+                            if p["soja"] and any(w in all_text for w in ["soja", "soy"]):
+                                warnings.append("🫘 Enthält Soja")
                                
-                                if product.get("image_front_url"):
-                                    st.image(product["image_front_url"], use_container_width=True)
+                            if p["vegan"] and any(w in all_text for w in ["milch", "ei ", "egg", "fleisch", "meat", "honig", "gelatine", "huhn", "rind", "schwein"]):
+                                warnings.append("🥩 Nicht Vegan")
+                            if p["vegetarisch"] and any(w in all_text for w in ["fleisch", "meat", "fisch", "gelatine", "huhn", "rind", "schwein", "karmin"]):
+                                warnings.append("🥩 Nicht Vegetarisch")
+                           
+                            # Religiöse Profile
+                            if p["halal"] and any(w in all_text for w in ["schwein", "pork", "porc", "alkohol", "alcohol", "wein", "wine", "gelatine", "e120", "karmin", "carmine"]):
+                                warnings.append("☪️ Nicht Halal-Konform")
+                            if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "krustentier", "shellfish", "gelatine", "karmin"]):
+                                warnings.append("✡️ Nicht Koscher-Konform")
                                
-                                # Zutaten auslesen (alles kleingeschrieben für die Suche)
-                                ingredients_str = str(product.get("ingredients_text", "")).lower()
-                                allergens_str = str(product.get("allergens_hierarchy", [])).lower()
-                                all_text = ingredients_str + " " + allergens_str
-                               
-                                # === ABGLEICH MIT DEM PROFIL ===
-                                warnings = []
-                                prof = st.session_state.profile
-                               
-                                # Wörterbuch für die Suche (Deutsch, Englisch, Französisch)
-                                check_dict = {
-                                    "laktose": ["milch", "milk", "lait", "laktose", "lactose", "molke", "sahne", "butter", "käse"],
-                                    "fruktose": ["fruktose", "fructose", "fruchtzucker", "apfel", "birne", "honig", "sirup"],
-                                    "histamin": ["tomate", "wein", "spinat", "käse", "hefe", "fermentiert", "essig", "salami"],
-                                    "sorbit": ["sorbit", "sorbitol", "e420"],
-                                    "sulfite": ["sulfit", "sulfite", "e220", "e221", "e222", "e223", "e224", "e226", "e227", "e228", "schwefeldioxid"],
-                                    "glutamat": ["glutamat", "glutamate", "e621", "e622", "e623", "e624", "e625", "hefeextrakt"],
-                                    "vegan": ["milch", "milk", "ei ", "egg", "fleisch", "meat", "fisch", "fish", "honig", "gelatine", "huhn", "rind", "schwein"],
-                                    "vegetarisch": ["fleisch", "meat", "fisch", "fish", "gelatine", "huhn", "rind", "schwein"]
-                                }
-                               
-                                # Prüfen, ob die aktiven Profil-Schalter im Text gefunden werden
-                                for key, is_active in prof.items():
-                                    if is_active:
-                                        search_words = check_dict[key]
-                                        if any(word in all_text for word in search_words):
-                                            if key == "vegan" or key == "vegetarisch":
-                                                warnings.append(f"Nicht {key.capitalize()}")
-                                            else:
-                                                warnings.append(f"Enthält {key.capitalize()}")
-
-                                # ERGEBNIS ANZEIGEN
-                                st.write("")
-                                if len(warnings) > 0:
-                                    st.error("### 🛑 WARNUNG!")
-                                    st.write("Dieses Produkt passt **nicht** zu deinem Schutzprofil:")
-                                    for w in warnings:
-                                        st.markdown(f"- **{w}**")
-                                else:
-                                    st.success("### ✅ PRODUKT SICHER!")
-                                    st.write("Es wurden keine Konflikte mit deinem Schutzprofil gefunden.")
-                                    st.balloons()
-                        else:
-                            st.warning("⚠️ Produkt nicht gefunden. (Tipp für Nutella: 3017620425035)")
+                            if warnings:
+                                st.error(f"### {t['warn']}")
+                                for w in warnings: st.markdown(f"- **{w}**")
+                            else:
+                                st.success(f"### {t['safe']}")
+                                throw_confetti() # Löst das Konfetti aus!
                     else:
-                        st.error(f"Datenbank antwortet nicht. Fehler {response.status_code}")
-               
+                        st.warning("⚠️ Produkt nicht gefunden.")
                 except Exception as e:
-                    st.error(f"Verbindungsfehler. Bitte Internet prüfen. Details: {e}")
+                    st.error("📡 Keine Verbindung.")
 
-# ==============================================================================
-# TAB 3: ÜBER UNS
-# ==============================================================================
+# --- TAB 3: EINSTELLUNGEN ---
+with tab_settings:
+    st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.markdown("<h4>🌐 Sprache / Language</h4>", unsafe_allow_html=True)
+        # Dropdown für Sprachen
+        new_lang = st.selectbox("Wähle deine Sprache:", ["Deutsch", "English", "Türkçe", "العربية", "Español"], index=["Deutsch", "English", "Türkçe", "العربية", "Español"].index(st.session_state.lang))
+        if new_lang != st.session_state.lang:
+            st.session_state.lang = new_lang
+            st.rerun() # Lädt die App sofort neu, um die Sprache zu ändern
+
+# --- TAB 4: INFO ---
 with tab_info:
     with st.container(border=True):
-        st.markdown("<h2>👥 Entwickler-Team</h2>", unsafe_allow_html=True)
-        st.markdown("<p>Hanns-Seidel-Gymnasium | Klasse 10a</p>", unsafe_allow_html=True)
-        st.divider()
-        st.write("👨‍💻 **Maximilian Maier**")
-        st.write("👨‍💻 **Benjamin Mehling**")
-        st.write("👨‍💻 **Ben Henkel**")
-        st.write("👨‍💻 **Marius Boulos**")
-        st.write("👩‍💻 **Sophie Hartwig**")
-       
-        st.info("Dieses Projekt nutzt die OpenFoodFacts API zur Analyse von über 2 Millionen Lebensmitteln.")
+        st.markdown("<h2>👥 Team 10a</h2>", unsafe_allow_html=True)
+        st.write("Maximilian Maier, Benjamin Mehling, Ben Henkel, Marius Boulos, Sophie Hartwig")
+        st.caption("Hanns-Seidel-Gymnasium | Data by OpenFoodFacts")
+
+
