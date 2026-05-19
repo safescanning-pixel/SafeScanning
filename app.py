@@ -69,13 +69,11 @@ def throw_confetti():
 # ==========================================
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
-if 'history' not in st.session_state: st.session_state.history = []
-if 'manual_code' not in st.session_state: st.session_state.manual_code = ""
+if 'scanned_code' not in st.session_state: st.session_state.scanned_code = ""
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, "fruktose": False, "histamin": False, "sorbit": False,
-        "sulfite": False, "glutamat": False,
-        "vegan": False, "vegetarisch": False
+        "sulfite": False, "glutamat": False, "vegan": False, "vegetarisch": False
     }
 
 ui = {
@@ -84,8 +82,7 @@ ui = {
         "title": "Mein Schutzprofil", "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", "save": "Profil speichern",
         "cat_allergy": "Intoleranzen", "cat_additives": "Zusatzstoffe", "cat_lifestyle": "Lebensstil & Religion",
         "laktose": "Laktose / Milch", "fruktose": "Fruktose", "histamin": "Histamin", "sorbit": "Sorbit",
-        "sulfite": "Sulfite", "glutamat": "Glutamat",
-        "vegan": "Vegan", "vegetarisch": "Vegetarisch",
+        "sulfite": "Sulfite", "glutamat": "Glutamat", "vegan": "Vegan", "vegetarisch": "Vegetarisch",
         "scan_h": "Scanner", "scan_p": "Nutzen Sie den Live-Scanner oder geben Sie den Code manuell ein",
         "btn_cam_start": "📸 Live Barcode-Scanner starten", "btn_cam_stop": "🛑 Scanner schließen",
         "safe": "✅ PRODUKT GEEIGNET!", "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
@@ -98,7 +95,6 @@ ui = {
 }
 t = ui["Deutsch"]
 
-# Offline Backup-Daten
 OFFLINE_DATA = {
     "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
     "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"}
@@ -108,7 +104,7 @@ tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["
 
 # --- TAB 1: MEIN SCHUTZPROFIL ---
 with tab_profil:
-    st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1>🛡️<br>{t['title']}</h1>")
     with st.container(border=True):
         st.markdown(f"<h4>⚙️ {t['cat_allergy']}</h4>", unsafe_allow_html=True)
         st.session_state.profile["laktose"] = st.toggle(t["laktose"], value=st.session_state.profile["laktose"])
@@ -124,7 +120,7 @@ with tab_profil:
         st.session_state.profile["vegan"] = st.toggle(t["vegan"], value=st.session_state.profile["vegan"])
         st.session_state.profile["vegetarisch"] = st.toggle(t["vegetarisch"], value=st.session_state.profile["vegetarisch"])
 
-# --- TAB 2: SCANNER (RÜCKKAMERA & AUTO-SCAN) ---
+# --- TAB 2: SCANNER (ABGEFANGEN & STABILISIERT) ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
@@ -132,7 +128,7 @@ with tab_scanner:
     if not st.session_state.cam_on:
         if st.button(t["btn_cam_start"]):
             st.session_state.cam_on = True
-            st.session_state.manual_code = ""
+            st.session_state.scanned_code = ""
             st.rerun()
     else:
         if st.button(t["btn_cam_stop"]):
@@ -140,43 +136,40 @@ with tab_scanner:
             st.rerun()
            
         with st.container(border=True):
-            # Der HTML5/JavaScript Live-Scanner
-            scan_component = components.html(
+            # Der bereinigte JS-Kamera-Frame
+            js_scanner = components.html(
                 """
-                <div id="interactive" style="width:100%; max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden;"></div>
+                <div id="interactive" style="width:100%; max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000;"></div>
                 <script src="https://unpkg.com/html5-qrcode"></script>
                 <script>
-                    function onScanSuccess(decodedText, decodedResult) {
-                        // Sendet das Ergebnis direkt an Streamlit zurück
-                        Streamlit.setComponentValue(decodedText);
+                    function onScanSuccess(decodedText) {
+                        // Verhindert das Senden von Python-Objekten, schickt reinen Text
+                        if (window.Streamlit) {
+                            window.Streamlit.setComponentValue(String(decodedText));
+                        }
                     }
                    
-                    // Initialisiert den Streamlit-Komponenten-Handshake
-                    if (!window.Streamlit) {
-                        window.addEventListener("message", function(e) {
-                            if (e.data.type === "streamlit:render") { startScanner(); }
-                        });
-                    } else { startScanner(); }
-
-                    function startScanner() {
+                    // Sicherer Start-Trigger
+                    setTimeout(() => {
                         const html5QrCode = new Html5Qrcode("interactive");
-                        const config = { fps: 15, qrbox: { width: 280, height: 160 } };
-                        // facingMode: "environment" erzwingt die Rückkamera
+                        const config = { fps: 10, qrbox: { width: 260, height: 150 } };
                         html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
                         .catch(err => console.log(err));
-                    }
+                    }, 300);
                 </script>
-                """, height=300
+                """, height=280
             )
            
-            if scan_component:
-                st.session_state.manual_code = str(scan_component)
+            # WICHTIG: Nur wenn js_scanner wirklich Text zurückgibt (und kein DeltaGenerator-Objekt ist), speichern wir es ab!
+            if js_scanner and isinstance(js_scanner, str) and not js_scanner.startswith("DeltaGenerator"):
+                st.session_state.scanned_code = js_scanner
                 st.session_state.cam_on = False
                 st.rerun()
 
-    barcode_input = st.text_input("Barcode", value=st.session_state.manual_code, placeholder=t["placeholder"])
+    # Fallback/Eingabe-Feld zeigt jetzt garantiert nur reinen Text
+    barcode_input = st.text_input("Barcode", value=st.session_state.scanned_code, placeholder=t["placeholder"])
 
-    if barcode_input:
+    if barcode_input and not barcode_input.startswith("DeltaGenerator"):
         barcode = "".join(filter(str.isdigit, barcode_input))
         if len(barcode) >= 8:
             with st.spinner("🔍 Analyse..."):
@@ -232,3 +225,5 @@ with tab_settings:
 with tab_info:
     st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
     st.caption("Hanns-Seidel-Gymnasium Aschaffenburg | Klasse 10a")
+
+
