@@ -375,7 +375,10 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                components.html("""
+                components.iframe(
+    "https://zxing-js.github.io/library/examples/qr-camera/",
+    height=500
+)
 
 <div id="scanner-container">
 
