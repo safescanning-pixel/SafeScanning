@@ -1,4 +1,4 @@
-import streamlit as st
+Hallo, es geht nicht, es greift nich auf die Kamera zu!!!: import streamlit as st
 import requests
 import streamlit.components.v1 as components
 
@@ -375,10 +375,7 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                components.iframe(
-    "https://zxing-js.github.io/library/examples/qr-camera/",
-    height=500
-)
+                components.html("""
 
 <div id="scanner-container">
 
