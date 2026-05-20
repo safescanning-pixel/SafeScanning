@@ -455,6 +455,29 @@ async function startScanner() {
 
     try {
 
+        // Prüfen ob Kamera API existiert
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+
+            hud.innerHTML = "Camera API not supported";
+
+            alert(
+                "Camera access is not supported in this browser.\n\n" +
+                "Use HTTPS or open via localhost."
+            );
+
+            return;
+        }
+
+        // EXPLIZITE PERMISSION ANFRAGE
+        const permissionStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        });
+
+        // direkt wieder stoppen
+        permissionStream.getTracks().forEach(track => track.stop());
+
+        // Kamera jetzt richtig starten
         const stream = await navigator.mediaDevices.getUserMedia({
 
             video: {
@@ -468,16 +491,18 @@ async function startScanner() {
 
                 height: {
                     ideal: 1080
-                },
+                }
+            },
 
-                focusMode: "continuous"
-            }
-
+            audio: false
         });
 
         currentStream = stream;
 
         video.srcObject = stream;
+
+        // WICHTIG für iPhone Safari
+        await video.play();
 
         hud.innerHTML = "Scanning...";
 
@@ -489,7 +514,6 @@ async function startScanner() {
 
                 const code = result.getText();
 
-                // SUCCESS UI
                 success.style.left = "0%";
                 success.style.opacity = "1";
 
@@ -500,12 +524,10 @@ async function startScanner() {
 
                 hud.innerHTML = "Product detected";
 
-                // HAPTIC
                 if (navigator.vibrate) {
                     navigator.vibrate([120, 40, 120]);
                 }
 
-                // SOUND
                 const beep = new Audio(
                     "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
                 );
@@ -514,7 +536,6 @@ async function startScanner() {
 
                 beep.play();
 
-                // STOP CAMERA
                 stream.getTracks().forEach(track => {
                     track.stop();
                 });
@@ -543,8 +564,12 @@ async function startScanner() {
 
         console.error(error);
 
-        hud.innerHTML = "Camera Error";
+        hud.innerHTML = "Camera Permission Denied";
 
+        alert(
+            "Camera access denied.\n\n" +
+            "Please allow camera permissions in your browser."
+        );
     }
 
 }
