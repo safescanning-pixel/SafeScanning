@@ -1,4 +1,4 @@
-Hallo, es geht nicht, es greift nich auf die Kamera zu!!!: import streamlit as st
+import streamlit as st
 import requests
 import streamlit.components.v1 as components
 
