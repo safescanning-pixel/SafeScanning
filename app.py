@@ -375,8 +375,7 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-
-    components.html("""
+                components.html("""
 
 <div id="scanner-container">
 
