@@ -375,50 +375,463 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                # Native, stabile JavaScript Kamera-Engine mit exaktem UI-Overlay & Scan-Linie
-                components.html("""
-                <div id="scanner-container" style="position: relative; width: 100%; height: 280px; background: #000; border-radius: 20px; overflow: hidden;">
-                    <div id="interactive" style="width: 100%; height: 100%;"></div>
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column;">
-                        <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
-                        <div style="display: flex; height: 140px;">
-                            <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
-                            <div style="width: 260px; border: 3px solid #FFF; box-shadow: 0 0 15px rgba(255,255,255,0.3); position: relative; background: transparent;">
-                                <div style="position: absolute; width: 100%; height: 3px; background: #FFF; top: 0; left: 0; box-shadow: 0 0 10px #FFF; animation: laser 2s linear infinite;"></div>
-                            </div>
-                            <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
-                        </div>
-                        <div style="flex: 1; background: rgba(0,0,0,0.45);"></div>
-                    </div>
-                </div>
-                
-                <script src="https://unpkg.com/html5-qrcode"></script>
-                <script>
-                function onScanSuccess(decodedText, decodedResult) {
+
+    components.html("""
+
+<div id="scanner-container">
+
+    <video id="video" autoplay playsinline></video>
+
+    <!-- Overlay -->
+    <div class="overlay">
+
+        <div class="overlay-top"></div>
+
+        <div class="overlay-middle">
+
+            <div class="overlay-side"></div>
+
+            <div id="scan-box">
+
+                <!-- Corner Effects -->
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+
+                <!-- Laser -->
+                <div id="laser"></div>
+
+                <!-- Success Sweep -->
+                <div id="success"></div>
+
+            </div>
+
+            <div class="overlay-side"></div>
+
+        </div>
+
+        <div class="overlay-top"></div>
+
+    </div>
+
+    <!-- HUD -->
+    <div id="hud">
+        AI Scanner Ready
+    </div>
+
+    <!-- Torch -->
+    <button id="torch-btn">
+        🔦
+    </button>
+
+</div>
+
+<script type="module">
+
+import {
+BrowserMultiFormatReader,
+NotFoundException
+} from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
+
+const codeReader = new BrowserMultiFormatReader();
+
+const video = document.getElementById('video');
+
+const success = document.getElementById('success');
+
+const scanBox = document.getElementById('scan-box');
+
+const hud = document.getElementById('hud');
+
+const torchBtn = document.getElementById('torch-btn');
+
+let currentStream = null;
+
+let scanned = false;
+
+let torchEnabled = false;
+
+async function startScanner() {
+
+    try {
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+
+            video: {
+                facingMode: {
+                    ideal: "environment"
+                },
+
+                width: {
+                    ideal: 1920
+                },
+
+                height: {
+                    ideal: 1080
+                },
+
+                focusMode: "continuous"
+            }
+
+        });
+
+        currentStream = stream;
+
+        video.srcObject = stream;
+
+        hud.innerHTML = "Scanning...";
+
+        codeReader.decodeFromVideoElement(video, (result, err) => {
+
+            if (result && !scanned) {
+
+                scanned = true;
+
+                const code = result.getText();
+
+                // SUCCESS UI
+                success.style.left = "0%";
+                success.style.opacity = "1";
+
+                scanBox.style.boxShadow =
+                    "0 0 45px rgba(16,185,129,1)";
+
+                scanBox.style.borderColor = "#10B981";
+
+                hud.innerHTML = "Product detected";
+
+                // HAPTIC
+                if (navigator.vibrate) {
+                    navigator.vibrate([120, 40, 120]);
+                }
+
+                // SOUND
+                const beep = new Audio(
+                    "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
+                );
+
+                beep.volume = 0.35;
+
+                beep.play();
+
+                // STOP CAMERA
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+
+                setTimeout(() => {
+
                     const url = new URL(window.parent.location.href);
-                    url.searchParams.set('scanned_barcode', decodedText);
+
+                    url.searchParams.set(
+                        "scanned_barcode",
+                        code
+                    );
+
                     window.parent.location.href = url.href;
-                    html5QrCode.stop();
-                }
-                
-                const html5QrCode = new Html5Qrcode("interactive");
-                html5QrCode.start(
-                    { facingMode: "environment" }, 
-                    { fps: 20, qrbox: { width: 260, height: 140 } },
-                    onScanSuccess,
-                    (errorMessage) => { /* Stille Aufzeichnung während des Suchens */ }
-                ).catch((err) => { console.error(err); });
-                </script>
-                
-                <style>
-                @keyframes laser {
-                    0% { top: 0%; }
-                    50% { top: 100%; }
-                    100% { top: 0%; }
-                }
-                video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
-                </style>
-                """, height=300)
+
+                }, 900);
+            }
+
+            if (err && !(err instanceof NotFoundException)) {
+                console.log(err);
+            }
+
+        });
+
+    } catch(error) {
+
+        console.error(error);
+
+        hud.innerHTML = "Camera Error";
+
+    }
+
+}
+
+startScanner();
+
+
+// TORCH / FLASHLIGHT
+
+torchBtn.addEventListener("click", async () => {
+
+    try {
+
+        const track = currentStream
+            .getVideoTracks()[0];
+
+        const capabilities = track.getCapabilities();
+
+        if (!capabilities.torch) {
+            alert("Torch not supported");
+            return;
+        }
+
+        torchEnabled = !torchEnabled;
+
+        await track.applyConstraints({
+            advanced: [{
+                torch: torchEnabled
+            }]
+        });
+
+        torchBtn.style.background =
+            torchEnabled
+            ? "rgba(16,185,129,0.9)"
+            : "rgba(255,255,255,0.12)";
+
+    } catch(e) {
+        console.log(e);
+    }
+
+});
+
+</script>
+
+<style>
+
+#scanner-container {
+
+    position: relative;
+    width: 100%;
+    height: 340px;
+
+    background: black;
+
+    overflow: hidden;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,0.18);
+}
+
+video {
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+/* OVERLAY */
+
+.overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    pointer-events: none;
+}
+
+.overlay-top {
+
+    flex: 1;
+
+    background: rgba(0,0,0,0.48);
+}
+
+.overlay-middle {
+
+    display: flex;
+
+    height: 170px;
+}
+
+.overlay-side {
+
+    flex: 1;
+
+    background: rgba(0,0,0,0.48);
+}
+
+#scan-box {
+
+    width: 280px;
+
+    border: 3px solid white;
+
+    border-radius: 18px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: all 0.5s ease;
+
+    backdrop-filter: blur(2px);
+}
+
+/* CORNERS */
+
+.corner {
+
+    position: absolute;
+
+    width: 28px;
+    height: 28px;
+
+    border-color: white;
+
+    border-style: solid;
+}
+
+.tl {
+    top: -2px;
+    left: -2px;
+    border-width: 5px 0 0 5px;
+}
+
+.tr {
+    top: -2px;
+    right: -2px;
+    border-width: 5px 5px 0 0;
+}
+
+.bl {
+    bottom: -2px;
+    left: -2px;
+    border-width: 0 0 5px 5px;
+}
+
+.br {
+    bottom: -2px;
+    right: -2px;
+    border-width: 0 5px 5px 0;
+}
+
+/* LASER */
+
+#laser {
+
+    position: absolute;
+
+    width: 100%;
+    height: 4px;
+
+    background: white;
+
+    box-shadow:
+        0 0 20px white,
+        0 0 40px white;
+
+    animation: laserMove 2s linear infinite;
+}
+
+/* SUCCESS */
+
+#success {
+
+    position: absolute;
+
+    top: 0;
+    left: -100%;
+
+    width: 100%;
+    height: 100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(16,185,129,0.55),
+            transparent
+        );
+
+    opacity: 0;
+
+    transition: all 0.6s ease;
+}
+
+/* HUD */
+
+#hud {
+
+    position: absolute;
+
+    bottom: 14px;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    padding: 8px 18px;
+
+    border-radius: 999px;
+
+    background: rgba(0,0,0,0.5);
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    backdrop-filter: blur(10px);
+
+    letter-spacing: 0.5px;
+}
+
+/* TORCH BUTTON */
+
+#torch-btn {
+
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    width: 44px;
+    height: 44px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.12);
+
+    color: white;
+
+    font-size: 20px;
+
+    backdrop-filter: blur(12px);
+
+    cursor: pointer;
+
+    transition: all 0.3s ease;
+}
+
+#torch-btn:hover {
+
+    transform: scale(1.08);
+}
+
+/* LASER ANIMATION */
+
+@keyframes laserMove {
+
+    0% {
+        top: 0%;
+    }
+
+    50% {
+        top: 100%;
+    }
+
+    100% {
+        top: 0%;
+    }
+}
+
+</style>
+
+""", height=340)
     else:
         st.session_state.cam_on = False
 
