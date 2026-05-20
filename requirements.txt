@@ -1,2 +1,6 @@
 streamlit
 requests
+opencv-python-headless
+numpy
+Pillow
+pyzbar
