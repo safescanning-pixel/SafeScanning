@@ -379,7 +379,7 @@ with tab_scanner:
 
 <div id="scanner-container">
 
-    <video id="video" autoplay playsinline></video>
+       <video id="video" autoplay muted playsinline></video>
 
     <!-- Overlay -->
     <div class="overlay">
@@ -429,167 +429,166 @@ with tab_scanner:
 <script type="module">
 
 import {
-BrowserMultiFormatReader,
-NotFoundException
+    BrowserMultiFormatReader,
+    NotFoundException
 } from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 
 const codeReader = new BrowserMultiFormatReader();
 
 const video = document.getElementById('video');
-
 const success = document.getElementById('success');
-
 const scanBox = document.getElementById('scan-box');
-
 const hud = document.getElementById('hud');
-
 const torchBtn = document.getElementById('torch-btn');
 
+let currentControls = null;
 let currentStream = null;
-
 let scanned = false;
-
 let torchEnabled = false;
 
 async function startScanner() {
 
     try {
 
-        // Prüfen ob Kamera API existiert
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
 
-            hud.innerHTML = "Camera API not supported";
+            hud.innerHTML = "Camera not supported";
 
             alert(
-                "Camera access is not supported in this browser.\n\n" +
-                "Use HTTPS or open via localhost."
+                "Camera API not supported.\n\n" +
+                "Use HTTPS or localhost."
             );
 
             return;
         }
 
-        // EXPLIZITE PERMISSION ANFRAGE
-        const permissionStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false
-        });
+        hud.innerHTML = "Starting camera...";
 
-        // direkt wieder stoppen
-        permissionStream.getTracks().forEach(track => track.stop());
+        currentControls = await codeReader.decodeFromConstraints(
 
-        // Kamera jetzt richtig starten
-        const stream = await navigator.mediaDevices.getUserMedia({
-
-            video: {
-                facingMode: {
-                    ideal: "environment"
+            {
+                video: {
+                    facingMode: {
+                        ideal: "environment"
+                    },
+                    width: {
+                        ideal: 1920
+                    },
+                    height: {
+                        ideal: 1080
+                    }
                 },
-
-                width: {
-                    ideal: 1920
-                },
-
-                height: {
-                    ideal: 1080
-                }
+                audio: false
             },
 
-            audio: false
-        });
+            video,
 
-        currentStream = stream;
+            (result, err, controls) => {
 
-        video.srcObject = stream;
-
-        // WICHTIG für iPhone Safari
-        await video.play();
-
-        hud.innerHTML = "Scanning...";
-
-        codeReader.decodeFromVideoElement(video, (result, err) => {
-
-            if (result && !scanned) {
-
-                scanned = true;
-
-                const code = result.getText();
-
-                success.style.left = "0%";
-                success.style.opacity = "1";
-
-                scanBox.style.boxShadow =
-                    "0 0 45px rgba(16,185,129,1)";
-
-                scanBox.style.borderColor = "#10B981";
-
-                hud.innerHTML = "Product detected";
-
-                if (navigator.vibrate) {
-                    navigator.vibrate([120, 40, 120]);
+                if (!currentStream && video.srcObject) {
+                    currentStream = video.srcObject;
                 }
 
-                const beep = new Audio(
-                    "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
-                );
+                if (result && !scanned) {
 
-                beep.volume = 0.35;
+                    scanned = true;
 
-                beep.play();
+                    const code = result.getText();
 
-                stream.getTracks().forEach(track => {
-                    track.stop();
-                });
+                    success.style.left = "0%";
+                    success.style.opacity = "1";
 
-                setTimeout(() => {
+                    scanBox.style.boxShadow =
+                        "0 0 45px rgba(16,185,129,1)";
 
-                    const url = new URL(window.parent.location.href);
+                    scanBox.style.borderColor = "#10B981";
 
-                    url.searchParams.set(
-                        "scanned_barcode",
-                        code
+                    hud.innerHTML = "Product detected";
+
+                    if (navigator.vibrate) {
+                        navigator.vibrate([120, 40, 120]);
+                    }
+
+                    const beep = new Audio(
+                        "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
                     );
 
-                    window.parent.location.href = url.href;
+                    beep.volume = 0.35;
 
-                }, 900);
+                    beep.play();
+
+                    try {
+                        controls.stop();
+                    } catch(e) {}
+
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => {
+                            track.stop();
+                        });
+                    }
+
+                    setTimeout(() => {
+
+                        const url = new URL(window.parent.location.href);
+
+                        url.searchParams.set(
+                            "scanned_barcode",
+                            code
+                        );
+
+                        window.parent.location.href = url.href;
+
+                    }, 900);
+                }
+
+                if (err && !(err instanceof NotFoundException)) {
+                    console.log(err);
+                }
             }
+        );
 
-            if (err && !(err instanceof NotFoundException)) {
-                console.log(err);
-            }
+        video.setAttribute("playsinline", true);
 
-        });
+        try {
+            await video.play();
+        } catch(e) {
+            console.log(e);
+        }
+
+        hud.innerHTML = "Scanning...";
 
     } catch(error) {
 
         console.error(error);
 
-        hud.innerHTML = "Camera Permission Denied";
+        hud.innerHTML = "Camera access denied";
 
         alert(
-            "Camera access denied.\n\n" +
-            "Please allow camera permissions in your browser."
+            "Camera access failed.\n\n" +
+            "Please allow camera permissions."
         );
     }
-
 }
 
 startScanner();
-
-
-// TORCH / FLASHLIGHT
 
 torchBtn.addEventListener("click", async () => {
 
     try {
 
+        if (!currentStream) return;
+
         const track = currentStream
             .getVideoTracks()[0];
+
+        if (!track) return;
 
         const capabilities = track.getCapabilities();
 
         if (!capabilities.torch) {
+
             alert("Torch not supported");
+
             return;
         }
 
@@ -607,13 +606,31 @@ torchBtn.addEventListener("click", async () => {
             : "rgba(255,255,255,0.12)";
 
     } catch(e) {
+
         console.log(e);
     }
+});
 
+window.addEventListener("beforeunload", () => {
+
+    try {
+
+        if (currentControls) {
+            currentControls.stop();
+        }
+
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+    } catch(e) {
+        console.log(e);
+    }
 });
 
 </script>
-
 <style>
 
 #scanner-container {
