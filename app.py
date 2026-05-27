@@ -669,55 +669,56 @@ button.addEventListener("click", async () => {
                             st.markdown("</div>", unsafe_allow_html=True)
                     
                     st.write("")
-                    with st.expander(t["details"]):
-                        if is_offline:
-    st.caption("ℹ️ Offline Fallback")
+                
+with st.expander(t["details"]):
+                    
+                    
+    if is_offline:
+        st.caption("ℹ️ Offline Fallback")
 
-st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+    st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
 
-if st.session_state.show_nutriscore:
+    if st.session_state.show_nutriscore:
 
-    nutri = product.get("nutriscore_grade", "N/A")
+        nutri = product.get("nutriscore_grade", "N/A")
 
-    st.write(f"🥗 Nutri-Score: {nutri.upper()}")
+        st.write(f"🥗 Nutri-Score: {nutri.upper()}")
 
-if st.session_state.show_processing:
+    if st.session_state.show_processing:
 
-    nova = product.get("nova_group", "N/A")
+        nova = product.get("nova_group", "N/A")
 
-    st.write(f"🏭 NOVA Group: {nova}")
+        st.write(f"🏭 NOVA Group: {nova}")
 
-if st.session_state.show_ecoscore:
+    if st.session_state.show_ecoscore:
 
-    eco = product.get("ecoscore_grade", "N/A")
+        eco = product.get("ecoscore_grade", "N/A")
 
-    st.write(f"🌍 Eco-Score: {eco.upper()}")
+        st.write(f"🌍 Eco-Score: {eco.upper()}")
 
-if st.session_state.show_packaging:
+    if st.session_state.show_packaging:
 
-    pack = product.get("packaging", "N/A")
+        pack = product.get("packaging", "N/A")
 
-    st.write(f"📦 Packaging: {pack}")
+        st.write(f"📦 Packaging: {pack}")
 
-if st.session_state.show_allergens:
+    if st.session_state.show_allergens:
 
-    allergens = product.get("allergens", "N/A")
+        allergens = product.get("allergens", "N/A")
 
-    st.write(f"⚠️ Allergens: {allergens}")
+        st.write(f"⚠️ Allergens: {allergens}")
 
-if st.session_state.show_additives:
+    if st.session_state.show_additives:
 
-    additives = product.get("additives_tags", [])
+        additives = product.get("additives_tags", [])
 
-    if additives:
+        if additives:
 
-        st.write("🧪 Additives:")
+            st.write("🧪 Additives:")
 
-        for add in additives:
+            for add in additives:
 
-            st.write(f"• {add}")
-                else:
-                    st.error(t["not_found"])
+                st.write(f"• {add}")
 
     # --- SCAN HISTORIE ---
     if st.session_state.history:
