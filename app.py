@@ -17,10 +17,19 @@ if "scanned_barcode" in st.query_params:
 # 1. SETUP & ULTRA CLEAN UI DESIGN (Premium)
 # ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
+prefers_dark = st_javascript("""
+window.matchMedia('(prefers-color-scheme: dark)').matches
+""")
 
+if prefers_dark:
+    st.session_state.dark_mode = True
 st.markdown("""
     <style>
-    .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
+ .stApp {
+    background-color: """ + ("#0F172A" if st.session_state.dark_mode else "#F8F9FA") + """;
+    color: """ + ("#F8FAFC" if st.session_state.dark_mode else "#111827") + """;
+    font-family: 'SF Pro Display', -apple-system, sans-serif;
+}
     header {visibility: hidden;}
     
     /* Moderne Tabs im iOS-Stil */
@@ -335,6 +344,59 @@ ui = {
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
 # ==========================================
+# TOP MENU
+# ==========================================
+
+with st.container(border=True):
+
+    st.markdown("## ⚙️ Einstellungen")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.markdown("### 🎨 Darstellung")
+
+        st.session_state.dark_mode = st.toggle(
+            "Dark Mode",
+            value=st.session_state.dark_mode
+        )
+
+    with col2:
+
+        st.markdown("### 📦 Produktinfos")
+
+        st.session_state.show_nutriscore = st.toggle(
+            "Nutri-Score",
+            value=st.session_state.show_nutriscore
+        )
+
+        st.session_state.show_allergens = st.toggle(
+            "Allergene",
+            value=st.session_state.show_allergens
+        )
+
+        st.session_state.show_additives = st.toggle(
+            "Zusatzstoffe",
+            value=st.session_state.show_additives
+        )
+
+        st.session_state.show_processing = st.toggle(
+            "NOVA Verarbeitung",
+            value=st.session_state.show_processing
+        )
+
+        st.session_state.show_ecoscore = st.toggle(
+            "Eco-Score",
+            value=st.session_state.show_ecoscore
+        )
+
+        st.session_state.show_packaging = st.toggle(
+            "Verpackung",
+            value=st.session_state.show_packaging
+        )
+        
+# ==========================================
 # 4. OFFLINE BACKUP DATA
 # ==========================================
 OFFLINE_DATA = {
@@ -396,504 +458,112 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                components.html("""
+                with st.container(border=True):
 
-<div id="scanner-container">
+    components.html("""
 
-       <video id="video" autoplay muted playsinline></video>
+<div style="display:flex;justify-content:center;padding-top:20px;">
 
-    <!-- Overlay -->
-    <div class="overlay">
+<button id="scanBtn"
 
-        <div class="overlay-top"></div>
+style="
+background:#4F46E5;
+color:white;
+border:none;
+padding:18px 28px;
+border-radius:20px;
+font-size:18px;
+font-weight:700;
+cursor:pointer;
+">
 
-        <div class="overlay-middle">
+📸 Start Scanner
 
-            <div class="overlay-side"></div>
-
-            <div id="scan-box">
-
-                <!-- Corner Effects -->
-                <div class="corner tl"></div>
-                <div class="corner tr"></div>
-                <div class="corner bl"></div>
-                <div class="corner br"></div>
-
-                <!-- Laser -->
-                <div id="laser"></div>
-
-                <!-- Success Sweep -->
-                <div id="success"></div>
-
-            </div>
-
-            <div class="overlay-side"></div>
-
-        </div>
-
-        <div class="overlay-top"></div>
-
-    </div>
-
-    <!-- HUD -->
-    <div id="hud">
-        AI Scanner Ready
-    </div>
-
-    <!-- Torch -->
-    <button id="torch-btn">
-        🔦
-    </button>
+</button>
 
 </div>
 
 <script type="module">
 
 import {
-    BrowserMultiFormatReader,
-    NotFoundException
-} from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
+BrowserMultiFormatReader
+}
+from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 
-const codeReader = new BrowserMultiFormatReader();
+const button = document.getElementById("scanBtn");
 
-const video = document.getElementById('video');
-const success = document.getElementById('success');
-const scanBox = document.getElementById('scan-box');
-const hud = document.getElementById('hud');
-const torchBtn = document.getElementById('torch-btn');
-
-let currentControls = null;
-let currentStream = null;
-let scanned = false;
-let torchEnabled = false;
-
-async function startScanner() {
+button.addEventListener("click", async () => {
 
     try {
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const codeReader =
+            new BrowserMultiFormatReader();
 
-            hud.innerHTML = "Camera not supported";
+        const devices =
+            await BrowserMultiFormatReader
+            .listVideoInputDevices();
 
-            alert(
-                "Camera API not supported.\n\n" +
-                "Use HTTPS or localhost."
-            );
+        if(devices.length === 0){
+
+            alert("Keine Kamera gefunden");
 
             return;
         }
 
-        hud.innerHTML = "Starting camera...";
+        const selectedDeviceId =
+            devices[0].deviceId;
 
-        currentControls = await codeReader.decodeFromConstraints(
+        const video =
+            document.createElement("video");
 
-            {
-                video: {
-                    facingMode: {
-                        ideal: "environment"
-                    },
-                    width: {
-                        ideal: 1920
-                    },
-                    height: {
-                        ideal: 1080
-                    }
-                },
-                audio: false
-            },
-
-            video,
-
-            (result, err, controls) => {
-
-                if (!currentStream && video.srcObject) {
-                    currentStream = video.srcObject;
-                }
-
-                if (result && !scanned) {
-
-                    scanned = true;
-
-                    const code = result.getText();
-
-                    success.style.left = "0%";
-                    success.style.opacity = "1";
-
-                    scanBox.style.boxShadow =
-                        "0 0 45px rgba(16,185,129,1)";
-
-                    scanBox.style.borderColor = "#10B981";
-
-                    hud.innerHTML = "Product detected";
-
-                    if (navigator.vibrate) {
-                        navigator.vibrate([120, 40, 120]);
-                    }
-
-                    const beep = new Audio(
-                        "https://actions.google.com/sounds/v1/cartoon/pop.ogg"
-                    );
-
-                    beep.volume = 0.35;
-
-                    beep.play();
-
-                    try {
-                        controls.stop();
-                    } catch(e) {}
-
-                    if (currentStream) {
-                        currentStream.getTracks().forEach(track => {
-                            track.stop();
-                        });
-                    }
-
-                    setTimeout(() => {
-
-                        const url = new URL(window.parent.location.href);
-
-                        url.searchParams.set(
-                            "scanned_barcode",
-                            code
-                        );
-
-                        window.parent.location.href = url.href;
-
-                    }, 900);
-                }
-
-                if (err && !(err instanceof NotFoundException)) {
-                    console.log(err);
-                }
-            }
-        );
-
+        video.setAttribute("autoplay", true);
+        video.setAttribute("muted", true);
         video.setAttribute("playsinline", true);
 
-        try {
-            await video.play();
-        } catch(e) {
-            console.log(e);
+        video.style.width = "100%";
+        video.style.borderRadius = "20px";
+
+        document.body.appendChild(video);
+
+        const result =
+            await codeReader
+            .decodeOnceFromVideoDevice(
+                selectedDeviceId,
+                video
+            );
+
+        if(result){
+
+            const code =
+                result.getText();
+
+            navigator.vibrate?.(200);
+
+            const url =
+                new URL(window.parent.location.href);
+
+            url.searchParams.set(
+                "scanned_barcode",
+                code
+            );
+
+            window.parent.location.href =
+                url.href;
         }
 
-        hud.innerHTML = "Scanning...";
+    } catch(err){
 
-    } catch(error) {
-
-        console.error(error);
-
-        hud.innerHTML = "Camera access denied";
+        console.error(err);
 
         alert(
-            "Camera access failed.\n\n" +
-            "Please allow camera permissions."
+            "Scanner Fehler.\nNutze Safari + HTTPS."
         );
-    }
-}
-
-startScanner();
-
-torchBtn.addEventListener("click", async () => {
-
-    try {
-
-        if (!currentStream) return;
-
-        const track = currentStream
-            .getVideoTracks()[0];
-
-        if (!track) return;
-
-        const capabilities = track.getCapabilities();
-
-        if (!capabilities.torch) {
-
-            alert("Torch not supported");
-
-            return;
-        }
-
-        torchEnabled = !torchEnabled;
-
-        await track.applyConstraints({
-            advanced: [{
-                torch: torchEnabled
-            }]
-        });
-
-        torchBtn.style.background =
-            torchEnabled
-            ? "rgba(16,185,129,0.9)"
-            : "rgba(255,255,255,0.12)";
-
-    } catch(e) {
-
-        console.log(e);
-    }
-});
-
-window.addEventListener("beforeunload", () => {
-
-    try {
-
-        if (currentControls) {
-            currentControls.stop();
-        }
-
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => {
-                track.stop();
-            });
-        }
-
-    } catch(e) {
-        console.log(e);
     }
 });
 
 </script>
-<style>
 
-#scanner-container {
-
-    position: relative;
-    width: 100%;
-    height: 340px;
-
-    background: black;
-
-    overflow: hidden;
-
-    border-radius: 24px;
-
-    box-shadow:
-        0 10px 40px rgba(0,0,0,0.18);
-}
-
-video {
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-}
-
-/* OVERLAY */
-
-.overlay {
-
-    position: absolute;
-
-    inset: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    pointer-events: none;
-}
-
-.overlay-top {
-
-    flex: 1;
-
-    background: rgba(0,0,0,0.48);
-}
-
-.overlay-middle {
-
-    display: flex;
-
-    height: 170px;
-}
-
-.overlay-side {
-
-    flex: 1;
-
-    background: rgba(0,0,0,0.48);
-}
-
-#scan-box {
-
-    width: 280px;
-
-    border: 3px solid white;
-
-    border-radius: 18px;
-
-    position: relative;
-
-    overflow: hidden;
-
-    transition: all 0.5s ease;
-
-    backdrop-filter: blur(2px);
-}
-
-/* CORNERS */
-
-.corner {
-
-    position: absolute;
-
-    width: 28px;
-    height: 28px;
-
-    border-color: white;
-
-    border-style: solid;
-}
-
-.tl {
-    top: -2px;
-    left: -2px;
-    border-width: 5px 0 0 5px;
-}
-
-.tr {
-    top: -2px;
-    right: -2px;
-    border-width: 5px 5px 0 0;
-}
-
-.bl {
-    bottom: -2px;
-    left: -2px;
-    border-width: 0 0 5px 5px;
-}
-
-.br {
-    bottom: -2px;
-    right: -2px;
-    border-width: 0 5px 5px 0;
-}
-
-/* LASER */
-
-#laser {
-
-    position: absolute;
-
-    width: 100%;
-    height: 4px;
-
-    background: white;
-
-    box-shadow:
-        0 0 20px white,
-        0 0 40px white;
-
-    animation: laserMove 2s linear infinite;
-}
-
-/* SUCCESS */
-
-#success {
-
-    position: absolute;
-
-    top: 0;
-    left: -100%;
-
-    width: 100%;
-    height: 100%;
-
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(16,185,129,0.55),
-            transparent
-        );
-
-    opacity: 0;
-
-    transition: all 0.6s ease;
-}
-
-/* HUD */
-
-#hud {
-
-    position: absolute;
-
-    bottom: 14px;
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    padding: 8px 18px;
-
-    border-radius: 999px;
-
-    background: rgba(0,0,0,0.5);
-
-    color: white;
-
-    font-size: 13px;
-
-    font-weight: 600;
-
-    backdrop-filter: blur(10px);
-
-    letter-spacing: 0.5px;
-}
-
-/* TORCH BUTTON */
-
-#torch-btn {
-
-    position: absolute;
-
-    top: 12px;
-    right: 12px;
-
-    width: 44px;
-    height: 44px;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: rgba(255,255,255,0.12);
-
-    color: white;
-
-    font-size: 20px;
-
-    backdrop-filter: blur(12px);
-
-    cursor: pointer;
-
-    transition: all 0.3s ease;
-}
-
-#torch-btn:hover {
-
-    transform: scale(1.08);
-}
-
-/* LASER ANIMATION */
-
-@keyframes laserMove {
-
-    0% {
-        top: 0%;
-    }
-
-    50% {
-        top: 100%;
-    }
-
-    100% {
-        top: 0%;
-    }
-}
-
-</style>
-
-""", height=340)
+""", height=500)
     else:
         st.session_state.cam_on = False
 
@@ -1000,8 +670,52 @@ video {
                     
                     st.write("")
                     with st.expander(t["details"]):
-                        if is_offline: st.caption("ℹ️ Offline Fallback")
-                        st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+                        if is_offline:
+    st.caption("ℹ️ Offline Fallback")
+
+st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+
+if st.session_state.show_nutriscore:
+
+    nutri = product.get("nutriscore_grade", "N/A")
+
+    st.write(f"🥗 Nutri-Score: {nutri.upper()}")
+
+if st.session_state.show_processing:
+
+    nova = product.get("nova_group", "N/A")
+
+    st.write(f"🏭 NOVA Group: {nova}")
+
+if st.session_state.show_ecoscore:
+
+    eco = product.get("ecoscore_grade", "N/A")
+
+    st.write(f"🌍 Eco-Score: {eco.upper()}")
+
+if st.session_state.show_packaging:
+
+    pack = product.get("packaging", "N/A")
+
+    st.write(f"📦 Packaging: {pack}")
+
+if st.session_state.show_allergens:
+
+    allergens = product.get("allergens", "N/A")
+
+    st.write(f"⚠️ Allergens: {allergens}")
+
+if st.session_state.show_additives:
+
+    additives = product.get("additives_tags", [])
+
+    if additives:
+
+        st.write("🧪 Additives:")
+
+        for add in additives:
+
+            st.write(f"• {add}")
                 else:
                     st.error(t["not_found"])
 
