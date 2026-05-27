@@ -1,7 +1,6 @@
-import streamlit as st
+Hallo, dass sind die Codes einer App über GitHub. app.py: import streamlit as st
 import requests
 import streamlit.components.v1 as components
-from streamlit_javascript import st_javascript
 
 # ==========================================
 # 0. SCANNER CALLBACK & PARAMS INTERCEPT
@@ -17,19 +16,10 @@ if "scanned_barcode" in st.query_params:
 # 1. SETUP & ULTRA CLEAN UI DESIGN (Premium)
 # ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
-prefers_dark = st_javascript("""
-window.matchMedia('(prefers-color-scheme: dark)').matches
-""")
 
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = bool(prefers_dark)
 st.markdown("""
     <style>
- .stApp {
-    background-color: """ + ("#0F172A" if st.session_state.dark_mode else "#F8F9FA") + """;
-    color: """ + ("#F8FAFC" if st.session_state.dark_mode else "#111827") + """;
-    font-family: 'SF Pro Display', -apple-system, sans-serif;
-}
+    .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
     header {visibility: hidden;}
     
     /* Moderne Tabs im iOS-Stil */
@@ -102,26 +92,6 @@ def throw_confetti():
 # ==========================================
 # 3. GLOBAL STATE & SPRACHEN
 # ==========================================
-if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = False
-
-if 'show_nutriscore' not in st.session_state:
-    st.session_state.show_nutriscore = True
-
-if 'show_additives' not in st.session_state:
-    st.session_state.show_additives = True
-
-if 'show_allergens' not in st.session_state:
-    st.session_state.show_allergens = True
-
-if 'show_processing' not in st.session_state:
-    st.session_state.show_processing = True
-
-if 'show_ecoscore' not in st.session_state:
-    st.session_state.show_ecoscore = False
-
-if 'show_packaging' not in st.session_state:
-    st.session_state.show_packaging = False
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
 if 'history' not in st.session_state: st.session_state.history = []
@@ -344,59 +314,6 @@ ui = {
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
 # ==========================================
-# TOP MENU
-# ==========================================
-
-with st.container(border=True):
-
-    st.markdown("## ⚙️ Einstellungen")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.markdown("### 🎨 Darstellung")
-
-        st.session_state.dark_mode = st.toggle(
-            "Dark Mode",
-            value=st.session_state.dark_mode
-        )
-
-    with col2:
-
-        st.markdown("### 📦 Produktinfos")
-
-        st.session_state.show_nutriscore = st.toggle(
-            "Nutri-Score",
-            value=st.session_state.show_nutriscore
-        )
-
-        st.session_state.show_allergens = st.toggle(
-            "Allergene",
-            value=st.session_state.show_allergens
-        )
-
-        st.session_state.show_additives = st.toggle(
-            "Zusatzstoffe",
-            value=st.session_state.show_additives
-        )
-
-        st.session_state.show_processing = st.toggle(
-            "NOVA Verarbeitung",
-            value=st.session_state.show_processing
-        )
-
-        st.session_state.show_ecoscore = st.toggle(
-            "Eco-Score",
-            value=st.session_state.show_ecoscore
-        )
-
-        st.session_state.show_packaging = st.toggle(
-            "Verpackung",
-            value=st.session_state.show_packaging
-        )
-        
-# ==========================================
 # 4. OFFLINE BACKUP DATA
 # ==========================================
 OFFLINE_DATA = {
@@ -459,28 +376,23 @@ with tab_scanner:
             
             with st.container(border=True):
                 with st.container(border=True):
-                    
-                    components.html("""
+
+    components.html("""
 
 <div style="display:flex;justify-content:center;padding-top:20px;">
-
-<button id="scanBtn"
-
-style="
-background:#4F46E5;
-color:white;
-border:none;
-padding:18px 28px;
-border-radius:20px;
-font-size:18px;
-font-weight:700;
-cursor:pointer;
-">
-
-📸 Start Scanner
-
-</button>
-
+    <button id="scanBtn"
+        style="
+        background:#4F46E5;
+        color:white;
+        border:none;
+        padding:18px 28px;
+        border-radius:20px;
+        font-size:18px;
+        font-weight:700;
+        cursor:pointer;
+        ">
+        📸 Start Scanner
+    </button>
 </div>
 
 <script type="module">
@@ -496,25 +408,19 @@ button.addEventListener("click", async () => {
 
     try {
 
-        const codeReader =
-            new BrowserMultiFormatReader();
+        const codeReader = new BrowserMultiFormatReader();
 
         const devices =
-            await BrowserMultiFormatReader
-            .listVideoInputDevices();
+            await BrowserMultiFormatReader.listVideoInputDevices();
 
         if(devices.length === 0){
-
             alert("Keine Kamera gefunden");
-
             return;
         }
 
-        const selectedDeviceId =
-            devices[0].deviceId;
+        const selectedDeviceId = devices[0].deviceId;
 
-        const video =
-            document.createElement("video");
+        const video = document.createElement("video");
 
         video.setAttribute("autoplay", true);
         video.setAttribute("muted", true);
@@ -526,16 +432,14 @@ button.addEventListener("click", async () => {
         document.body.appendChild(video);
 
         const result =
-            await codeReader
-            .decodeOnceFromVideoDevice(
+            await codeReader.decodeOnceFromVideoDevice(
                 selectedDeviceId,
                 video
             );
 
         if(result){
 
-            const code =
-                result.getText();
+            const code = result.getText();
 
             navigator.vibrate?.(200);
 
@@ -669,56 +573,11 @@ button.addEventListener("click", async () => {
                             st.markdown("</div>", unsafe_allow_html=True)
                     
                     st.write("")
-                
-with st.expander(t["details"]):
-                    
-                    
-    if is_offline:
-        st.caption("ℹ️ Offline Fallback")
-
-    st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
-
-    if st.session_state.show_nutriscore:
-
-        nutri = product.get("nutriscore_grade", "N/A")
-
-        st.write(f"🥗 Nutri-Score: {nutri.upper()}")
-
-    if st.session_state.show_processing:
-
-        nova = product.get("nova_group", "N/A")
-
-        st.write(f"🏭 NOVA Group: {nova}")
-
-    if st.session_state.show_ecoscore:
-
-        eco = product.get("ecoscore_grade", "N/A")
-
-        st.write(f"🌍 Eco-Score: {eco.upper()}")
-
-    if st.session_state.show_packaging:
-
-        pack = product.get("packaging", "N/A")
-
-        st.write(f"📦 Packaging: {pack}")
-
-    if st.session_state.show_allergens:
-
-        allergens = product.get("allergens", "N/A")
-
-        st.write(f"⚠️ Allergens: {allergens}")
-
-    if st.session_state.show_additives:
-
-        additives = product.get("additives_tags", [])
-
-        if additives:
-
-            st.write("🧪 Additives:")
-
-            for add in additives:
-
-                st.write(f"• {add}")
+                    with st.expander(t["details"]):
+                        if is_offline: st.caption("ℹ️ Offline Fallback")
+                        st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+                else:
+                    st.error(t["not_found"])
 
     # --- SCAN HISTORIE ---
     if st.session_state.history:
@@ -747,7 +606,7 @@ with tab_info:
         st.divider()
         st.write("👨‍💻 **Marius Boulos**")
         st.write("👨‍💻 **Benjamin Mehling**")
-        st.write("👨‍💻 **Sophie Hartwig**")
+        st.write("👩‍💻 **Sophie Hartwig**")
         st.write("👨‍💻 **Ben Henkel**")
-        st.write("👩‍💻 **Maximilian Maier**")
-        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg / Germany")
+        st.write("👨‍💻 **Maximilian Maier**")
+        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg / Germany") 
