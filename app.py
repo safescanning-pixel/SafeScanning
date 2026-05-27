@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import streamlit.components.v1 as components
+from streamlit_javascript import st_javascript
 
 # ==========================================
 # 0. SCANNER CALLBACK & PARAMS INTERCEPT
@@ -92,6 +93,26 @@ def throw_confetti():
 # ==========================================
 # 3. GLOBAL STATE & SPRACHEN
 # ==========================================
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = False
+
+if 'show_nutriscore' not in st.session_state:
+    st.session_state.show_nutriscore = True
+
+if 'show_additives' not in st.session_state:
+    st.session_state.show_additives = True
+
+if 'show_allergens' not in st.session_state:
+    st.session_state.show_allergens = True
+
+if 'show_processing' not in st.session_state:
+    st.session_state.show_processing = True
+
+if 'show_ecoscore' not in st.session_state:
+    st.session_state.show_ecoscore = False
+
+if 'show_packaging' not in st.session_state:
+    st.session_state.show_packaging = False
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
 if 'history' not in st.session_state: st.session_state.history = []
