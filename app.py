@@ -378,96 +378,56 @@ with tab_scanner:
                 with st.container(border=True):
                     
                     components.html("""
+<div id="reader" style="width:100%;border-radius:20px;overflow:hidden;"></div>
 
-<div style="display:flex;justify-content:center;padding-top:20px;">
-    <button id="scanBtn"
-        style="
-        background:#4F46E5;
-        color:white;
-        border:none;
-        padding:18px 28px;
-        border-radius:20px;
-        font-size:18px;
-        font-weight:700;
-        cursor:pointer;
-        ">
-        📸 Start Scanner
-    </button>
-</div>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-<script type="module">
+<script>
+function startScanner() {
 
-import {
-BrowserMultiFormatReader
-}
-from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
+    const html5QrCode = new Html5Qrcode("reader");
 
-const button = document.getElementById("scanBtn");
+    Html5Qrcode.getCameras().then(devices => {
 
-button.addEventListener("click", async () => {
+        if (devices && devices.length) {
 
-    try {
+            const cameraId = devices[0].id;
 
-        const codeReader = new BrowserMultiFormatReader();
+            html5QrCode.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                (decodedText) => {
 
-        const devices =
-            await BrowserMultiFormatReader.listVideoInputDevices();
+                    const url =
+                        new URL(window.parent.location.href);
 
-        if(devices.length === 0){
+                    url.searchParams.set(
+                        "scanned_barcode",
+                        decodedText
+                    );
+
+                    window.parent.location.href =
+                        url.href;
+                },
+                (errorMessage) => {
+                }
+            );
+
+        } else {
             alert("Keine Kamera gefunden");
-            return;
         }
 
-        const selectedDeviceId = devices[0].deviceId;
+    }).catch(err => {
+        alert("Kamera Fehler: " + err);
+    });
+}
 
-        const video = document.createElement("video");
-
-        video.setAttribute("autoplay", true);
-        video.setAttribute("muted", true);
-        video.setAttribute("playsinline", true);
-
-        video.style.width = "100%";
-        video.style.borderRadius = "20px";
-
-        document.body.appendChild(video);
-
-        const result =
-            await codeReader.decodeOnceFromVideoDevice(
-                selectedDeviceId,
-                video
-            );
-
-        if(result){
-
-            const code = result.getText();
-
-            navigator.vibrate?.(200);
-
-            const url =
-                new URL(window.parent.location.href);
-
-            url.searchParams.set(
-                "scanned_barcode",
-                code
-            );
-
-            window.parent.location.href =
-                url.href;
-        }
-
-    } catch(err){
-
-        console.error(err);
-
-        alert(
-            "Scanner Fehler.\nNutze Safari + HTTPS."
-        );
-    }
-});
-
+startScanner();
 </script>
-
-""", height=500)
+""", height=400)
     else:
         st.session_state.cam_on = False
 
