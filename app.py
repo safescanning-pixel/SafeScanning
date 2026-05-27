@@ -1,4 +1,4 @@
-Hallo, dass sind die Codes einer App über GitHub. app.py: import streamlit as st
+import streamlit as st
 import requests
 import streamlit.components.v1 as components
 
