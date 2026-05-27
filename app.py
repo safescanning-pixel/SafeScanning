@@ -21,8 +21,8 @@ prefers_dark = st_javascript("""
 window.matchMedia('(prefers-color-scheme: dark)').matches
 """)
 
-if prefers_dark:
-    st.session_state.dark_mode = True
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = bool(prefers_dark)
 st.markdown("""
     <style>
  .stApp {
