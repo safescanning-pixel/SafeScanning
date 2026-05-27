@@ -459,8 +459,8 @@ with tab_scanner:
             
             with st.container(border=True):
                 with st.container(border=True):
-
-    components.html("""
+                    
+                    components.html("""
 
 <div style="display:flex;justify-content:center;padding-top:20px;">
 
