@@ -378,7 +378,10 @@ with tab_scanner:
                 with st.container(border=True):
                     
                     components.html("""
-<div id="reader" style="width:100%;border-radius:20px;overflow:hidden;"></div>
+<video id="reader"
+       style="width:100%;
+              border-radius:20px;">
+</video>
 
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 
@@ -498,7 +501,10 @@ html5QrCode.start(
         alert("Kamera Fehler: " + err);
     });
 }
-
+console.log("Scanner wird gestartet");
+async function startScanner() {
+    alert("Scanner gestartet");
+}
 startScanner();
 </script>
 """, height=550)
