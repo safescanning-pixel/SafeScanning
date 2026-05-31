@@ -380,30 +380,99 @@ with tab_scanner:
                     components.html("""
 <div id="reader" style="width:100%;border-radius:20px;overflow:hidden;"></div>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
 
 <script>
-function startScanner() {
+async function startScanner() {
 
-    const html5QrCode = new Html5Qrcode("reader");
+    const codeReader =
+        new ZXing.BrowserMultiFormatReader();
 
+    try {
+
+        const devices =
+            await codeReader.listVideoInputDevices();
+
+        let selectedDevice = devices[0];
+
+        const backCamera =
+            devices.find(device =>
+                device.label.toLowerCase().includes("back") ||
+                device.label.toLowerCase().includes("rear") ||
+                device.label.toLowerCase().includes("environment")
+            );
+
+        if (backCamera) {
+            selectedDevice = backCamera;
+        }
+
+        codeReader.decodeFromVideoDevice(
+            selectedDevice.deviceId,
+            "reader",
+            (result, err) => {
+
+                if (result) {
+
+                    const url =
+                        new URL(window.parent.location.href);
+
+                    url.searchParams.set(
+                        "scanned_barcode",
+                        result.text
+                    );
+
+                    window.parent.location.href =
+                        url.href;
+                }
+            }
+        );
+
+    } catch(error) {
+
+        alert(
+            "Scanner Fehler: " + error
+        );
+    }
+}
+);
     Html5Qrcode.getCameras().then(devices => {
 
         if (devices && devices.length) {
 
-            const backCamera =
-    devices.find(device =>
-        device.label.toLowerCase().includes('back')
-    ) || devices[0];
+let cameraId = devices[0].id;
 
-const cameraId = backCamera.id;
+const backCamera = devices.find(device =>
+    device.label.toLowerCase().includes("back") ||
+    device.label.toLowerCase().includes("rear") ||
+    device.label.toLowerCase().includes("environment")
+);
 
-            html5QrCode.start(
-                cameraId,
-                {
-                    fps: 10,
-                    qrbox: 250
-                },
+if (backCamera) {
+    cameraId = backCamera.id;
+}
+navigator.mediaDevices.getUserMedia({
+    video: {
+        facingMode: {
+            ideal: "environment"
+        }
+    }
+});
+html5QrCode.start(
+    cameraId,
+    {
+        fps: 15,
+
+        qrbox: {
+            width: 320,
+            height: 180
+        },
+
+        aspectRatio: 1.777,
+
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+        }
+    },
                 (decodedText) => {
 
                     const url =
@@ -432,7 +501,7 @@ const cameraId = backCamera.id;
 
 startScanner();
 </script>
-""", height=400)
+""", height=550)
     else:
         st.session_state.cam_on = False
 
