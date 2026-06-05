@@ -55,7 +55,7 @@ st.markdown("""
     }
     .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-1px); }
     
-    /* Ergebnis-Boxen mit Gaming Level-Pass / Fail Glow-Effekt */
+    /* Ergebnis-Boxen mit Gaming Level Glow-Effekt */
     .result-box-safe { 
         background-color: #ECFDF5; border: 4px solid #10B981; border-radius: 20px; padding: 20px; color: #065F46; 
         box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); animation: passGlow 1.5s infinite alternate;
@@ -90,7 +90,7 @@ def throw_confetti():
     )
 
 # ==========================================
-# 3. GLOBAL STATE & SPRACHEN
+# 3. GLOBAL STATE & ALLE 12 SPRACHEN
 # ==========================================
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
@@ -165,7 +165,7 @@ ui = {
         "sulfite": "الكبريتيت", "glutamat": "الغلوتامات", "vegan": "نباتي تام", "vegetarisch": "نباتي", "halal": "حلال", "koscher": "كوشير",
         "scan_h": "الماسح الضوئي", "scan_p": "استخدم الكاميرا أو أدخل الرمز يدويًا",
         "btn_cam_start": "📸 تشغيل الماسح", "btn_cam_stop": "🛑 إيقاف الماسح",
-        "safe": "✅ المنتج آمن ومناسب!", "safe_sub": "هذاext المنتج يطابق ملفك الشخصي تمامًا.",
+        "safe": "✅ المنتج آمن ومناسب!", "safe_sub": "هذا المنتج يطابق ملفك الشخصي تمامًا.",
         "warn": "🛑 غير مناسب!", "not_found": "⚠️ لم يتم العثور على المنتج.", "no_conn": "📡 لا يوجد اتصال بالخادم.",
         "lang_select": "اختر اللغة:", "saved_msg": "✅ تم حفظ الملف بنجاح!", "team_title": "👥 فريق التطوير الصف 10a",
         "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_histamin": "🍷 خطر الهيستامين", "w_sorbit": "🍬 يحتوي على السوربيتول",
@@ -260,7 +260,7 @@ ui = {
     },
     "Português": {
         "t1": "👤 Perfil", "t2": "📸 Scanner", "t3": "⚙️ Definições", "t4": "ℹ️ Info",
-        "title": "Meu Perfil de Proteção", "sub": "Configure as suas alergias e preferências", "save": "Salvar Perfil",
+        "title": "Meu Perfil de Proteção", "sub": "Configure as suas allergies e preferências", "save": "Salvar Perfil",
         "cat_allergy": "Intolerâncias e Alérgenos", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de vida",
         "laktose": "Lactose / Leite", "fruktose": "Frutose", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Glúten", "nuesse": "Frutos de casca rija", "soja": "Soja", "erdnuesse": "Amendoins",
@@ -269,7 +269,7 @@ ui = {
         "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "🛑 Parar Scanner",
         "safe": "✅ PRODUTO SEGURO!", "safe_sub": "Este produto está em conformidade com o seu perfil.",
         "warn": "🛑 NÃO COMPATÍVEL!", "not_found": "⚠️ Produto não encontrado.", "no_conn": "📡 Sem ligação.",
-        "lang_select": "Idioma:", "saved_msg": "✅ Perfil salvo com sucesso!", "team_title": "👥 Equipa Classe 10a",
+        "lang_select": "Idioma:", "saved_msg": "✅ Perfil saved com sucesso!", "team_title": "👥 Equipa Classe 10a",
         "w_laktose": "🥛 Contém lactose/leite", "w_fruktose": "🍎 Contém frutose", "w_histamin": "🍷 Risco de histamina", "w_sorbit": "🍬 Contém sorbitol",
         "w_sulfite": "🧪 Contém sulfitos", "w_glutamat": "🍕 Contém glutamato", "w_gluten": "🌾 Contém glúten", "w_nuesse": "🌰 Contém frutos de casca rija", "w_soja": "🌱 Contém soja", "w_erdnuesse": "🥜 Contém amendoins",
         "w_vegan": "🥩 Não Vegano", "w_vegetarisch": "🥩 Não Vegetariano", "w_halal": "☪️ Não Halal", "w_koscher": "✡️ Não Kosher",
@@ -288,7 +288,7 @@ ui = {
         "warn": "🛑 ไม่ปลอดภัย / ห้ามทาน!", "not_found": "⚠️ ไม่พบสินค้า", "no_conn": "📡 การเชื่อมต่อล้มเหลว",
         "lang_select": "เลือกภาษา:", "saved_msg": "✅ บันทึกโปรไฟล์สำเร็จ!", "team_title": "👥 ทีมผู้พัฒนา ชั้น ม.4/a",
         "w_laktose": "🥛 มีส่วนผสมของแลคโตส/นม", "w_fruktose": "🍎 มีส่วนผสมของฟรุกโตส", "w_histamin": "🍷 มีความเสี่ยงจากฮิสตามีน", "w_sorbit": "🍬 มีส่วนผสมของซอร์บิทอล",
-        "w_sulfite": "🧪 มีส่วนผสมของซัลไฟต์", "w_glutamat": "🍕 มีส่วนผสมของผงชูรส", "w_gluten": "🌾 มีส่วนผสมของกลูเตน", "w_nuesse": "🌰 มีส่วนผสมของถั่วเปลือกแข็ง", "w_soja": "🌱 มีส่วนผสมของถั่วเหลือง", "w_erdnuesse": "🥜 มีส่วนผสมของถั่วลิสง",
+        "w_sulfite": "🧪 มีส่วนผสมของซัลไฟต์", "w_glutamat": "🍕 มีส่วนผสมของผงชูรส", "w_gluten": "🌾 มีส่วนผสมของกลูเตน", "w_nuesse": "🌰 มีส่วนผสมของถั่วเปลือกแข็ง", "w_soja": "🌱 มีส่วนผสม of ถั่วเหลือง", "w_erdnuesse": "🥜 มีส่วนผสมของถั่วลิสง",
         "w_vegan": "🥩 ไม่ใช่วีแกน", "w_vegetarisch": "🥩 ไม่ใช่มังสวิรัติ", "w_halal": "☪️ ไม่ผ่านมาตรฐานฮาลาล", "w_koscher": "✡️ ไม่ผ่านมาตรฐานโคเชอร์",
         "placeholder": "พิมพ์บาร์โค้ด...", "hist_title": "🕒 ประวัติการสแกน", "details": "🔬 ส่วนผสมและการวิเคราะห์"
     },
@@ -299,7 +299,7 @@ ui = {
         "laktose": "유당 / 우유", "fruktose": "과당", "histamin": "히스타민", "sorbit": "소르비톨",
         "gluten": "글루텐", "nuesse": "견과류", "soja": "대두", "erdnuesse": "땅콩",
         "sulfite": "아황산염", "glutamat": "글루타민산염", "vegan": "비건", "vegetarisch": "채식주의자", "halal": "할랄", "koscher": "코셔",
-        "scan_h": "스캐너", "scan_p": "카мера를 사용하거나 바코드를 직접 입력하세요",
+        "scan_h": "스캐너", "scan_p": "카메라를 사용하거나 바코드를 직접 입력하세요",
         "btn_cam_start": "📸 스캐너 시작", "btn_cam_stop": "🛑 스캐너 중지",
         "safe": "✅ 안전한 제품입니다!", "safe_sub": "당신의 보호 프로필과 완벽하게 일치합니다.",
         "warn": "🛑 적합하지 않습니다!", "not_found": "⚠️ 제품을 찾을 수 없습니다.", "no_conn": "📡 데이터베이스 연결 끊김.",
@@ -314,11 +314,12 @@ ui = {
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
 # ==========================================
-# 4. OFFLINE BACKUP DATA
+# 4. OFFLINE BACKUP DATA (Inklusive Brause)
 # ==========================================
 OFFLINE_DATA = {
     "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
-    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"}
+    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"},
+    "40335711": {"product_name": "Ahoj-Brause Pulver", "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure (L+), Säureregulator: Natriumhydrogencarbonat, Süßungsmittel: Natriumcyclamat, Acesulfam-K und Saccharin-Natrium, Aromen, Farbstoffe: Karotine, E141, Anthocyane.", "image_front_url": ""}
 }
 
 # ==========================================
@@ -375,10 +376,8 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                with st.container(border=True):
-                    
-                    # HIER IST DER NEUE, PROFESSIONELLE IPAD SCANNER CODE
-                    components.html("""
+                # Kamerabox mit integrierter High-Tech Scan-Erfolgsanimation
+                components.html("""
 <style>
 #reader {
     width: 100%;
@@ -387,64 +386,97 @@ with tab_scanner:
     position: relative;
     background-color: #000;
 }
-/* Professioneller roter Scanner-Laser */
 .scanner-laser {
     position: absolute;
-    left: 5%;
-    width: 90%;
-    height: 3px;
+    left: 0; width: 100%; height: 4px;
     background-color: #EF4444;
-    box-shadow: 0 0 12px #EF4444, 0 0 4px #EF4444;
-    animation: scanning 2.5s infinite ease-in-out;
-    z-index: 10;
+    box-shadow: 0 0 15px #EF4444, 0 0 5px #EF4444;
+    animation: scanning 2s infinite ease-in-out;
+    z-index: 100;
     pointer-events: none;
 }
 @keyframes scanning {
-    0% { top: 20%; }
-    50% { top: 80%; }
-    100% { top: 20%; }
+    0% { top: 15%; }
+    50% { top: 85%; }
+    100% { top: 15%; }
 }
-/* Styling für das html5-qrcode interne Video */
 #reader video {
     object-fit: cover !important;
     border-radius: 20px;
 }
+
+/* Erfolgs-Overlay Animation */
+#success-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(79, 70, 229, 0.9); /* AllergyShield Indigo */
+    backdrop-filter: blur(5px);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+}
+.scan-card {
+    text-align: center;
+    color: white;
+    font-family: -apple-system, sans-serif;
+    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popUp {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
 </style>
 
-<div id="reader">
+<div id="reader" style="position: relative;">
     <div class="scanner-laser"></div>
+    
+    <div id="success-overlay">
+        <div class="scan-card">
+            <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
+            <div style="font-size: 24px; font-weight: 800; letter-spacing: 1px;">CODE ERKANNT!</div>
+            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse wird geladen...</div>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
 function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
+    const html5QrCode = new Html5Qrcode("reader", {
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    });
     
-    // "environment" zwingt iOS/iPadOS dazu, die echte Rückkamera zu nutzen
     html5QrCode.start(
         { facingMode: "environment" },
-        {
-            fps: 20,
-            // Ein breites Rechteck ist perfekt für EAN-Barcodes
-            qrbox: { width: 300, height: 160 }
-        },
+        { fps: 25 },
         (decodedText) => {
-            const url = new URL(window.parent.location.href);
-            url.searchParams.set("scanned_barcode", decodedText);
-            window.parent.location.href = url.href;
+            // 1. Animation starten
+            document.getElementById("success-overlay").style.display = "flex";
+            document.querySelector(".scanner-laser").style.display = "none";
+            
+            // 2. Nach 700ms cooler Animationszeit weiterleiten
+            setTimeout(() => {
+                const url = new URL(window.parent.location.href);
+                url.searchParams.set("scanned_barcode", decodedText);
+                window.parent.location.href = url.href;
+            }, 700);
         },
-        (errorMessage) => {
-            // Läuft leise im Hintergrund weiter
-        }
+        (errorMessage) => {}
     ).catch(err => {
-        alert("Kamera-Zugriff verweigert oder nicht gefunden: " + err);
+        alert("Fehler beim Kamerastart: " + err);
     });
 }
-
-setTimeout(startScanner, 500);
+setTimeout(startScanner, 400);
 </script>
-""", height=400)
+""", height=360)
     else:
         st.session_state.cam_on = False
 
@@ -561,7 +593,7 @@ setTimeout(startScanner, 500);
                 st.session_state.manual_code = item['code']
                 st.rerun()
 
-# --- TAB 3: EINSTELLUNGEN ---
+# --- TAB 3: EINSTELLUNGEN (Inklusive allen 12 Sprachen) ---
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
