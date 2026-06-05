@@ -713,4 +713,3 @@ with tab_info:
         st.caption(
             "Hanns-Seidel-Gymnasium Aschaffenburg / Germany"
         )
-```
