@@ -18,7 +18,7 @@ if "scanned_barcode" in st.query_params:
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
 st.markdown("""
-    <styleimport streamlit as st
+<style>
 import requests
 import streamlit.components.v1 as components
 
