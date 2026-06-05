@@ -1,1 +1,1 @@
-zbar-tools
+freeglut3-dev
