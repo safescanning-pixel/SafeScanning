@@ -1,8 +1,6 @@
 import streamlit as st
 import requests
 import streamlit.components.v1 as components
-from PIL import Image
-from pyzbar.pyzbar import decode
 
 # ==========================================
 # 0. SCANNER CALLBACK & PARAMS INTERCEPT
@@ -167,7 +165,7 @@ ui = {
         "sulfite": "الكبريتيت", "glutamat": "الغلوتامات", "vegan": "نباتي تام", "vegetarisch": "نباتي", "halal": "حلال", "koscher": "كوشير",
         "scan_h": "الماسح الضوئي", "scan_p": "استخدم الكاميرا أو أدخل الرمز يدويًا",
         "btn_cam_start": "📸 تشغيل الماسح", "btn_cam_stop": "🛑 إيقاف الماسح",
-        "safe": "✅ المنتج آمن ومناسب!", "safe_sub": "هذا المنتج يطابق ملفك الشخصي تمامًا.",
+        "safe": "✅ المنتج آمن ومناسب!", "safe_sub": "هذاext المنتج يطابق ملفك الشخصي تمامًا.",
         "warn": "🛑 غير مناسب!", "not_found": "⚠️ لم يتم العثور على المنتج.", "no_conn": "📡 لا يوجد اتصال بالخادم.",
         "lang_select": "اختر اللغة:", "saved_msg": "✅ تم حفظ الملف بنجاح!", "team_title": "👥 فريق التطوير الصف 10a",
         "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_histamin": "🍷 خطر الهيستامين", "w_sorbit": "🍬 يحتوي على السوربيتول",
@@ -187,7 +185,7 @@ ui = {
         "safe": "✅ 产品安全可用！", "safe_sub": "该产品完全符合您的安全配置。",
         "warn": "🛑 不适用该产品！", "not_found": "⚠️ 未找到该产品。", "no_conn": "📡 无法连接到数据库。",
         "lang_select": "选择语言:", "saved_msg": "✅ 档案保存成功！", "team_title": "👥 10a 班级开发团队",
-        "w_laktose": "🥛 含有乳糖/牛奶", "w_fruktose": "🍎 含有果糖", "w_histamin": "🍷 存在组胺风险", "w_sorbit": "🍬 含有山梨糖醇",
+        "w_laktose": "🥛 含有乳糖/牛奶", "w_fruktose": "🍎 含有过糖", "w_histamin": "🍷 存在组胺风险", "w_sorbit": "🍬 含有山梨糖醇",
         "w_sulfite": "🧪 含有亚硫酸盐", "w_glutamat": "🍕 含有谷氨酸钠", "w_gluten": "🌾 含有麸质", "w_nuesse": "🌰 含有坚果", "w_soja": "🌱 含有大豆", "w_erdnuesse": "🥜 含有花生",
         "w_vegan": "🥩 非纯素食", "w_vegetarisch": "🥩 非素食", "w_halal": "☪️ 不符合清真标准", "w_koscher": "✡️ 不符合犹太洁食标准",
         "placeholder": "输入条形码...", "hist_title": "🕒 扫描历史", "details": "🔬 成分与分析"
@@ -262,7 +260,7 @@ ui = {
     },
     "Português": {
         "t1": "👤 Perfil", "t2": "📸 Scanner", "t3": "⚙️ Definições", "t4": "ℹ️ Info",
-        "title": "Meu Perfil de Proteção", "sub": "Configure as suas allergies e preferências", "save": "Salvar Perfil",
+        "title": "Meu Perfil de Proteção", "sub": "Configure as suas alergias e preferências", "save": "Salvar Perfil",
         "cat_allergy": "Intolerâncias e Alérgenos", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de vida",
         "laktose": "Lactose / Leite", "fruktose": "Frutose", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Glúten", "nuesse": "Frutos de casca rija", "soja": "Soja", "erdnuesse": "Amendoins",
@@ -301,7 +299,7 @@ ui = {
         "laktose": "유당 / 우유", "fruktose": "과당", "histamin": "히스타민", "sorbit": "소르비톨",
         "gluten": "글루텐", "nuesse": "견과류", "soja": "대두", "erdnuesse": "땅콩",
         "sulfite": "아황산염", "glutamat": "글루타민산염", "vegan": "비건", "vegetarisch": "채식주의자", "halal": "할랄", "koscher": "코셔",
-        "scan_h": "스캐너", "scan_p": "카메라를 사용하거나 바코드를 직접 입력하세요",
+        "scan_h": "스캐너", "scan_p": "카мера를 사용하거나 바코드를 직접 입력하세요",
         "btn_cam_start": "📸 스캐너 시작", "btn_cam_stop": "🛑 스캐너 중지",
         "safe": "✅ 안전한 제품입니다!", "safe_sub": "당신의 보호 프로필과 완벽하게 일치합니다.",
         "warn": "🛑 적합하지 않습니다!", "not_found": "⚠️ 제품을 찾을 수 없습니다.", "no_conn": "📡 데이터베이스 연결 끊김.",
@@ -377,20 +375,76 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                # ZUVERLÄSSIGER PYTHON KAMERA SCANNER STATT JS-IFRAME-HACK
-                img_buffer = st.camera_input("Barcode scannen", label_visibility="collapsed")
-                
-                if img_buffer is not None:
-                    image = Image.open(img_buffer)
-                    decoded_objects = decode(image)
+                with st.container(border=True):
                     
-                    if decoded_objects:
-                        barcode = decoded_objects[0].data.decode('utf-8')
-                        st.session_state.manual_code = barcode
-                        st.session_state.cam_on = False
-                        st.rerun()
-                    else:
-                        st.warning("⚠️ Kein Barcode erkannt. Bitte halte den Code gut lesbar in die Kamera.")
+                    # HIER IST DER NEUE, PROFESSIONELLE IPAD SCANNER CODE
+                    components.html("""
+<style>
+#reader {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    background-color: #000;
+}
+/* Professioneller roter Scanner-Laser */
+.scanner-laser {
+    position: absolute;
+    left: 5%;
+    width: 90%;
+    height: 3px;
+    background-color: #EF4444;
+    box-shadow: 0 0 12px #EF4444, 0 0 4px #EF4444;
+    animation: scanning 2.5s infinite ease-in-out;
+    z-index: 10;
+    pointer-events: none;
+}
+@keyframes scanning {
+    0% { top: 20%; }
+    50% { top: 80%; }
+    100% { top: 20%; }
+}
+/* Styling für das html5-qrcode interne Video */
+#reader video {
+    object-fit: cover !important;
+    border-radius: 20px;
+}
+</style>
+
+<div id="reader">
+    <div class="scanner-laser"></div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+function startScanner() {
+    const html5QrCode = new Html5Qrcode("reader");
+    
+    // "environment" zwingt iOS/iPadOS dazu, die echte Rückkamera zu nutzen
+    html5QrCode.start(
+        { facingMode: "environment" },
+        {
+            fps: 20,
+            // Ein breites Rechteck ist perfekt für EAN-Barcodes
+            qrbox: { width: 300, height: 160 }
+        },
+        (decodedText) => {
+            const url = new URL(window.parent.location.href);
+            url.searchParams.set("scanned_barcode", decodedText);
+            window.parent.location.href = url.href;
+        },
+        (errorMessage) => {
+            // Läuft leise im Hintergrund weiter
+        }
+    ).catch(err => {
+        alert("Kamera-Zugriff verweigert oder nicht gefunden: " + err);
+    });
+}
+
+setTimeout(startScanner, 500);
+</script>
+""", height=400)
     else:
         st.session_state.cam_on = False
 
@@ -421,7 +475,6 @@ with tab_scanner:
                         st.session_state.history.insert(0, {"name": p_name, "code": barcode})
                         if len(st.session_state.history) > 4: st.session_state.history.pop()
                     
-                    # Verbesserte & lückenlose API-Analyse (Text- + Tag-Strukturen)
                     tags_text = " ".join(product.get("allergens_tags", [])) + " " + " ".join(product.get("ingredients_analysis_tags", [])) + " " + " ".join(product.get("labels_tags", []))
                     all_text = (
                         str(product.get("ingredients_text", "")) + " " + 
@@ -434,7 +487,6 @@ with tab_scanner:
                     warnings = []
                     p = st.session_state.profile
                     
-                    # Überprüfungskriterien inkl. neuer Allergene
                     if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "en:milk"]):
                         warnings.append(t["w_laktose"])
                     if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]):
@@ -465,7 +517,6 @@ with tab_scanner:
                     if p["koscher"] and any(w in all_text for w in ["schwein", "pork", "porc", "schalentiere", "shrimp"]):
                         warnings.append(t["w_koscher"])
                         
-                    # SPLIT SCREEN LAYOUT
                     st.write("")
                     col_left, col_right = st.columns([1.3, 1], gap="medium")
                     
@@ -502,7 +553,6 @@ with tab_scanner:
                 else:
                     st.error(t["not_found"])
 
-    # --- SCAN HISTORIE ---
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
