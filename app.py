@@ -1,17 +1,16 @@
-importimport streamlit as st
+import streamlit as st
 import requests
 import streamlit.components.v1 as components
-import numpy as np
-from PIL import Image
-import zxingcpp
 
 # ==========================================
 # 0. SCANNER CALLBACK & PARAMS INTERCEPT
 # ==========================================
-# Wird für den nativen Scanner nicht mehr benötigt, 
-# aber wir initialisieren hier den manual_code sauber.
-if "manual_code" not in st.session_state: 
-    st.session_state.manual_code = ""
+if "scanned_barcode" in st.query_params:
+    scanned = st.query_params["scanned_barcode"]
+    if scanned:
+        st.session_state.manual_code = scanned
+        st.query_params.clear()
+        st.rerun()
 
 # ==========================================
 # 1. SETUP & ULTRA CLEAN UI DESIGN (Premium)
@@ -96,6 +95,7 @@ def throw_confetti():
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
 if 'history' not in st.session_state: st.session_state.history = []
+if 'manual_code' not in st.session_state: st.session_state.manual_code = ""
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, "fruktose": False, "histamin": False, "sorbit": False,
@@ -128,7 +128,7 @@ ui = {
         "cat_allergy": "Intolerances & Allergens", "cat_additives": "Additives", "cat_lifestyle": "Lifestyle & Religion",
         "laktose": "Lactose / Milk", "fruktose": "Fructose", "histamin": "Histamine", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Tree Nuts", "soja": "Soy", "erdnuesse": "Peanuts",
-        "sulfite": "Sulfites", "glutamat": "Glamate", "vegan": "Vegan", "vegetarisch": "Vegetarian", "halal": "Halal", "koscher": "Kosher",
+        "sulfite": "Sulfites", "glutamat": "Glutamate", "vegan": "Vegan", "vegetarisch": "Vegetarian", "halal": "Halal", "koscher": "Kosher",
         "scan_h": "Scanner", "scan_p": "Use the camera or enter the code manually",
         "btn_cam_start": "📸 Start Scanner", "btn_cam_stop": "🛑 Stop Scanner",
         "safe": "✅ PRODUCT SAFE!", "safe_sub": "Matches your profile perfectly.",
@@ -376,23 +376,179 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                # ========================================================
-                # HIER IST DER NEUE IPAD-KOMPATIBLE NATIVE SCANNER
-                # ========================================================
-                kamera_bild = st.camera_input("Barcode scannen", label_visibility="collapsed")
-                
-                if kamera_bild:
-                    img = Image.open(kamera_bild)
-                    img_np = np.array(img)
-                    ergebnisse = zxingcpp.read_barcodes(img_np)
-                    
-                    if ergebnisse:
-                        scanned_code = ergebnisse[0].text
-                        st.session_state.manual_code = scanned_code
-                        st.success(f"✅ Code erkannt: {scanned_code}")
-                        st.rerun()
-                    else:
-                        st.warning("⚠️ Kein Barcode erkannt. Bitte halte den Barcode ruhiger oder näher in die Kamera.")
+                # Kamerabox mit integrierter High-Tech Scan-Erfolgsanimation und iPad-Fix
+                components.html("""
+<style>
+#scanner-container {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    background-color: #000;
+    min-height: 360px;
+    font-family: -apple-system, sans-serif;
+}
+#reader {
+    width: 100%;
+    height: 100%;
+}
+#reader video {
+    object-fit: cover !important;
+    border-radius: 20px;
+    min-height: 360px;
+}
+.scanner-laser {
+    position: absolute;
+    left: 0; width: 100%; height: 4px;
+    background-color: #10B981; 
+    box-shadow: 0 0 15px #10B981, 0 0 5px #10B981;
+    animation: scanning 2s infinite ease-in-out;
+    z-index: 100;
+    pointer-events: none;
+    display: none;
+}
+@keyframes scanning {
+    0% { top: 10%; }
+    50% { top: 90%; }
+    100% { top: 10%; }
+}
+/* Erfolgs-Overlay Animation */
+#success-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(79, 70, 229, 0.9);
+    backdrop-filter: blur(5px);
+    z-index: 500;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+}
+.scan-card {
+    text-align: center;
+    color: white;
+    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popUp {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+/* iOS Start Button Overlay (Zwingend fuer Safari) */
+#ios-start-btn {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(17, 24, 39, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+.start-btn {
+    background: #4F46E5;
+    color: white;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    transition: transform 0.2s;
+}
+.start-btn:active {
+    transform: scale(0.95);
+}
+</style>
+
+<div id="scanner-container">
+    <div id="reader"></div>
+    
+    <div class="scanner-laser"></div>
+    
+    <div id="ios-start-btn">
+        <div style="font-size: 40px; margin-bottom: 15px;">📸</div>
+        <button class="start-btn" onclick="requestAndStart()">
+            Kamera freigeben & Starten
+        </button>
+        <div style="color: #9CA3AF; font-size: 12px; margin-top: 15px; text-align: center; padding: 0 20px;">
+            Sichere Verbindung.<br>Bitte beim iOS-Popup auf "Erlauben" tippen.
+        </div>
+    </div>
+
+    <div id="success-overlay">
+        <div class="scan-card">
+            <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
+            <div style="font-size: 24px; font-weight: 800; letter-spacing: 1px;">CODE ERKANNT!</div>
+            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse wird geladen...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+let html5QrCode;
+
+function requestAndStart() {
+    // 1. UI anpassen: Button weg, Laser an
+    document.getElementById("ios-start-btn").style.display = "none";
+    document.querySelector(".scanner-laser").style.display = "block";
+
+    html5QrCode = new Html5Qrcode("reader", {
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    });
+    
+    const config = { fps: 20, qrbox: { width: 250, height: 250 } };
+    
+    // 2. iPad/iOS Safari Fix: Explizit nach der hinteren Hauptkamera fragen (exact)
+    html5QrCode.start(
+        { facingMode: { exact: "environment" } }, 
+        config,
+        onScanSuccess,
+        onScanFailure
+    ).catch(err => {
+        console.warn("Rückkamera nicht direkt gefunden, versuche Fallback...", err);
+        // Fallback, falls das iPad exact: environment ablehnt
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        ).catch(finalErr => {
+            alert("Kamera-Zugriff blockiert. Bitte lade die Seite neu und erlaube den Kamerazugriff in Safari.");
+            document.getElementById("ios-start-btn").style.display = "flex";
+            document.querySelector(".scanner-laser").style.display = "none";
+        });
+    });
+}
+
+function onScanSuccess(decodedText) {
+    document.getElementById("success-overlay").style.display = "flex";
+    document.querySelector(".scanner-laser").style.display = "none";
+    
+    // Scanner sofort stoppen für flüssigere Streamlit-Weiterleitung
+    if(html5QrCode) {
+        html5QrCode.stop().then(() => {
+            setTimeout(() => {
+                const url = new URL(window.parent.location.href);
+                url.searchParams.set("scanned_barcode", decodedText);
+                window.parent.location.href = url.href;
+            }, 300);
+        });
+    }
+}
+
+function onScanFailure(error) {
+    // Ignoriere die Standard-Hintergrundfehler der Erkennung
+}
+</script>
+""", height=380)
     else:
         st.session_state.cam_on = False
 
