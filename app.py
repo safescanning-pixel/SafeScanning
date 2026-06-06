@@ -376,41 +376,48 @@ with tab_scanner:
                 st.rerun()
             
             with st.container(border=True):
-                # Kamerabox mit integrierter High-Tech Scan-Erfolgsanimation
+                # Kamerabox mit integrierter High-Tech Scan-Erfolgsanimation und iPad-Fix
                 components.html("""
 <style>
-#reader {
+#scanner-container {
     width: 100%;
     border-radius: 20px;
     overflow: hidden;
     position: relative;
     background-color: #000;
+    min-height: 360px;
+    font-family: -apple-system, sans-serif;
 }
-.scanner-laser {
-    position: absolute;
-    left: 0; width: 100%; height: 4px;
-    background-color: #EF4444;
-    box-shadow: 0 0 15px #EF4444, 0 0 5px #EF4444;
-    animation: scanning 2s infinite ease-in-out;
-    z-index: 100;
-    pointer-events: none;
-}
-@keyframes scanning {
-    0% { top: 15%; }
-    50% { top: 85%; }
-    100% { top: 15%; }
+#reader {
+    width: 100%;
+    height: 100%;
 }
 #reader video {
     object-fit: cover !important;
     border-radius: 20px;
+    min-height: 360px;
 }
-
+.scanner-laser {
+    position: absolute;
+    left: 0; width: 100%; height: 4px;
+    background-color: #10B981; 
+    box-shadow: 0 0 15px #10B981, 0 0 5px #10B981;
+    animation: scanning 2s infinite ease-in-out;
+    z-index: 100;
+    pointer-events: none;
+    display: none;
+}
+@keyframes scanning {
+    0% { top: 10%; }
+    50% { top: 90%; }
+    100% { top: 10%; }
+}
 /* Erfolgs-Overlay Animation */
 #success-overlay {
     display: none;
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(79, 70, 229, 0.9); /* AllergyShield Indigo */
+    background: rgba(79, 70, 229, 0.9);
     backdrop-filter: blur(5px);
     z-index: 500;
     align-items: center;
@@ -420,18 +427,55 @@ with tab_scanner:
 .scan-card {
     text-align: center;
     color: white;
-    font-family: -apple-system, sans-serif;
     animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 @keyframes popUp {
     0% { transform: scale(0.6); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+/* iOS Start Button Overlay (Zwingend fuer Safari) */
+#ios-start-btn {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(17, 24, 39, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+.start-btn {
+    background: #4F46E5;
+    color: white;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    transition: transform 0.2s;
+}
+.start-btn:active {
+    transform: scale(0.95);
+}
 </style>
 
-<div id="reader" style="position: relative;">
+<div id="scanner-container">
+    <div id="reader"></div>
+    
     <div class="scanner-laser"></div>
     
+    <div id="ios-start-btn">
+        <div style="font-size: 40px; margin-bottom: 15px;">📸</div>
+        <button class="start-btn" onclick="requestAndStart()">
+            Kamera freigeben & Starten
+        </button>
+        <div style="color: #9CA3AF; font-size: 12px; margin-top: 15px; text-align: center; padding: 0 20px;">
+            Sichere Verbindung.<br>Bitte beim iOS-Popup auf "Erlauben" tippen.
+        </div>
+    </div>
+
     <div id="success-overlay">
         <div class="scan-card">
             <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
@@ -444,8 +488,14 @@ with tab_scanner:
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader", {
+let html5QrCode;
+
+function requestAndStart() {
+    // 1. UI anpassen: Button weg, Laser an
+    document.getElementById("ios-start-btn").style.display = "none";
+    document.querySelector(".scanner-laser").style.display = "block";
+
+    html5QrCode = new Html5Qrcode("reader", {
         formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -454,29 +504,51 @@ function startScanner() {
         ]
     });
     
+    const config = { fps: 20, qrbox: { width: 250, height: 250 } };
+    
+    // 2. iPad/iOS Safari Fix: Explizit nach der hinteren Hauptkamera fragen (exact)
     html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 25 },
-        (decodedText) => {
-            // 1. Animation starten
-            document.getElementById("success-overlay").style.display = "flex";
+        { facingMode: { exact: "environment" } }, 
+        config,
+        onScanSuccess,
+        onScanFailure
+    ).catch(err => {
+        console.warn("Rückkamera nicht direkt gefunden, versuche Fallback...", err);
+        // Fallback, falls das iPad exact: environment ablehnt
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanFailure
+        ).catch(finalErr => {
+            alert("Kamera-Zugriff blockiert. Bitte lade die Seite neu und erlaube den Kamerazugriff in Safari.");
+            document.getElementById("ios-start-btn").style.display = "flex";
             document.querySelector(".scanner-laser").style.display = "none";
-            
-            // 2. Nach 700ms cooler Animationszeit weiterleiten
+        });
+    });
+}
+
+function onScanSuccess(decodedText) {
+    document.getElementById("success-overlay").style.display = "flex";
+    document.querySelector(".scanner-laser").style.display = "none";
+    
+    // Scanner sofort stoppen für flüssigere Streamlit-Weiterleitung
+    if(html5QrCode) {
+        html5QrCode.stop().then(() => {
             setTimeout(() => {
                 const url = new URL(window.parent.location.href);
                 url.searchParams.set("scanned_barcode", decodedText);
                 window.parent.location.href = url.href;
-            }, 700);
-        },
-        (errorMessage) => {}
-    ).catch(err => {
-        alert("Fehler beim Kamerastart: " + err);
-    });
+            }, 300);
+        });
+    }
 }
-setTimeout(startScanner, 400);
+
+function onScanFailure(error) {
+    // Ignoriere die Standard-Hintergrundfehler der Erkennung
+}
 </script>
-""", height=360)
+""", height=380)
     else:
         st.session_state.cam_on = False
 
