@@ -535,9 +535,11 @@ function onScanSuccess(decodedText) {
     // Scanner sofort stoppen für flüssigere Streamlit-Weiterleitung
     if(html5QrCode) {
         html5QrCode.stop().then(() => {
-            const url = new URL(window.location.href);
-url.searchParams.set("scanned_barcode", decodedText);
-window.location.href = url.href;
+            setTimeout(() => {
+                const url = new URL(window.parent.location.href);
+                url.searchParams.set("scanned_barcode", decodedText);
+                window.parent.location.href = url.href;
+            }, 300);
         });
     }
 }
