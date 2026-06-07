@@ -383,27 +383,42 @@ with tab_scanner:
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
     
-    // config mit qrbox verdunkelt den Rand und fokussiert den Scanner auf die Mitte
+    // Konfiguration auf klassische Barcodes anpassen
     const config = { 
-        fps: 10,
-        qrbox: { width: 250, height: 150 } 
+        fps: 15,
+        qrbox: { width: 250, height: 150 },
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
     };
 
     html5QrCode.start(
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            document.getElementById("success-overlay").style.display = "flex";
-            document.querySelector(".scanner-laser").style.display = "none";
-            setTimeout(() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set("scanned_barcode", decodedText);
-                window.location.href = url.href;
-            }, 500);
+            // Kamera sauber stoppen, um Ressourcen freizugeben
+            html5QrCode.stop().then(() => {
+                document.getElementById("success-overlay").style.display = "flex";
+                document.querySelector(".scanner-laser").style.display = "none";
+                setTimeout(() => {
+                    // window.parent nutzen, damit die Streamlit-App (nicht nur das iFrame) weiterleitet
+                    const url = new URL(window.parent.location.href);
+                    url.searchParams.set("scanned_barcode", decodedText);
+                    window.parent.location.href = url.href;
+                }, 600);
+            }).catch(err => {
+                console.error("Scanner konnte nicht gestoppt werden.", err);
+            });
         },
-        (errorMessage) => {}
+        (errorMessage) => {
+            // Wird ignoriert, da der Scanner kontinuierlich Fehler wirft, wenn kein Code im Bild ist
+        }
     ).catch(err => {
-        alert("Kamera-Fehler: " + err);
+        alert("Kamera-Fehler: Bitte erlaube den Zugriff auf die Kamera. " + err);
     });
 }
 setTimeout(startScanner, 400);
