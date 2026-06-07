@@ -1,22 +1,21 @@
 import streamlit as st
 import requests
 import streamlit.components.v1 as components
+import cv2
+import numpy as np
 
-# ==========================================
-# 1. INITIALISIERUNG & SEITEN-KONFIGURATION
-# ==========================================
-# WICHTIG: set_page_config MUSS DIE ALLERERSTE STREAMLIT-AKTION SEIN! Keine Ausnahmen!
+# 1. WICHTIG: set_page_config MUSS DIE ALLERERSTE STREAMLIT-AKTION SEIN! Keine Ausnahmen!
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# Abfrage der URL-Parameter für den Barcode-Scan (wichtig für den iPad-In-App-Scanner)
+# 2. ERST DANACH darf die URL abgefragt werden.
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params.get("scanned_barcode")
     if scanned:
         st.session_state.manual_code = scanned
         st.session_state.cam_on = False  # Kamera ausschalten, da wir fertig sind
         st.query_params.clear()  # URL sofort säubern
+        # Kein st.rerun() hier! Das Skript läuft einfach weiter nach unten und analysiert direkt.
 
-# Custom-CSS für professionelles App-Design und reibungslose iPad-Anzeige
 st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
@@ -34,16 +33,6 @@ st.markdown("""
     .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-1px); }
     .result-box-safe { background-color: #ECFDF5; border: 4px solid #10B981; border-radius: 20px; padding: 20px; color: #065F46; box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); animation: passGlow 1.5s infinite alternate; }
     .result-box-warn { background-color: #FEF2F2; border: 4px solid #EF4444; border-radius: 20px; padding: 20px; color: #991B1B; box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); animation: failGlow 1.5s infinite alternate; }
-    
-    /* Nutri Score Badges CSS */
-    .nutri-badge { padding: 8px 16px; border-radius: 10px; font-weight: 800; color: white; display: inline-block; font-size: 18px; margin-top: 5px; }
-    .nutri-a { background-color: #038141; }
-    .nutri-b { background-color: #85BB2F; }
-    .nutri-c { background-color: #FECB02; }
-    .nutri-d { background-color: #EE8100; }
-    .nutri-e { background-color: #E63E11; }
-    .nutri-unknown { background-color: #9CA3AF; }
-
     @keyframes passGlow { 0% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); } 100% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.9); } }
     @keyframes failGlow { 0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); } 100% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.9); } }
     </style>
@@ -57,7 +46,6 @@ def throw_confetti():
         """, height=0,
     )
 
-# Session States initialisieren
 if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: st.session_state.cam_on = False
 if 'history' not in st.session_state: st.session_state.history = []
@@ -68,9 +56,6 @@ if 'profile' not in st.session_state:
         "gluten": False, "nuesse": False, "soja": False, "erdnuesse": False, "vegan": False, "vegetarisch": False, "halal": False, "koscher": False
     }
 
-# ==========================================
-# 2. MULTILINGUALE SPRACHDATENBANK (UI)
-# ==========================================
 ui = {
     "Deutsch": {
         "t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "t4": "ℹ️ Info",
@@ -87,9 +72,7 @@ ui = {
         "w_laktose": "🥛 Enthält Laktose/Milch", "w_fruktose": "🍎 Enthält Fruktose", "w_histamin": "🍷 Histamin-Risiko erkannt", "w_sorbit": "🍬 Enthält Sorbit (E420)",
         "w_sulfite": "🧪 Enthält Sulfite (Schwefeldioxid)", "w_glutamat": "🍕 Enthält Glutamat", "w_gluten": "🌾 Enthält Gluten", "w_nuesse": "🌰 Enthält Schalenfrüchte/Nüsse", "w_soja": "🌱 Enthält Soja", "w_erdnuesse": "🥜 Enthält Erdnüsse",
         "w_vegan": "🥩 Nicht Vegan", "w_vegetarisch": "🥩 Nicht Vegetarisch", "w_halal": "☪️ Nicht Halal-Konform", "w_koscher": "✡️ Nicht Koscher-Konform",
-        "placeholder": "Barcode eintippen...", "hist_title": "🕒 Letzte Scans", "details": "🔬 Inhaltsstoffe & Analyse",
-        "nutri_title": "🥗 Nährwert-Qualität", "cal_title": "🔥 Kalorien-Check", "cal_slider": "Dein täglicher Kalorien-Richtwert (kcal):",
-        "cal_percentage": "Dieses Produkt verbraucht **{:.1f}%** deines Tagesbedarfs pro 100g.", "de_ingredients": "🇩🇪 Deutsche Zutatenliste (Übersetzt):"
+        "placeholder": "Barcode eintippen...", "hist_title": "🕒 Letzte Scans", "details": "🔬 Inhaltsstoffe & Analyse"
     },
     "English": {
         "t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "t4": "ℹ️ Info",
@@ -106,9 +89,7 @@ ui = {
         "w_laktose": "🥛 Contains Lactose", "w_fruktose": "🍎 Contains Fructose", "w_histamin": "🍷 Histamine Risk", "w_sorbit": "🍬 Contains Sorbitol",
         "w_sulfite": "🧪 Contains Sulfites", "w_glutamat": "🍕 Contains Glutamate", "w_gluten": "🌾 Contains Gluten", "w_nuesse": "🌰 Contains Nuts", "w_soja": "🌱 Contains Soy", "w_erdnuesse": "🥜 Contains Peanuts",
         "w_vegan": "🥩 Not Vegan", "w_vegetarisch": "🥩 Not Vegetarian", "w_halal": "☪️ Not Halal", "w_koscher": "✡️ Not Kosher",
-        "placeholder": "Type barcode...", "hist_title": "🕒 History", "details": "🔬 Ingredients & Analysis",
-        "nutri_title": "🥗 Nutritional Quality", "cal_title": "🔥 Calorie Check", "cal_slider": "Your daily calorie guideline (kcal):",
-        "cal_percentage": "This product uses **{:.1f}%** of your daily budget per 100g.", "de_ingredients": "🇩🇪 German Ingredients (Translated):"
+        "placeholder": "Type barcode...", "hist_title": "🕒 History", "details": "🔬 Ingredients & Analysis"
     },
     "日本語": {
         "t1": "👤 プロファイル", "t2": "📸 スキャナー", "t3": "⚙️ 設定", "t4": "ℹ️ 情報",
@@ -125,9 +106,7 @@ ui = {
         "w_laktose": "🥛 乳成分含有", "w_fruktose": "🍎 果糖含有", "w_histamin": "🍷 ヒスタミンのリスク", "w_sorbit": "🍬 ソルビトール含有",
         "w_sulfite": "🧪 亜硫酸塩含有", "w_glutamat": "🍕 グルタミン酸含有", "w_gluten": "🌾 グルテン含有", "w_nuesse": "🌰 ナッツ類含有", "w_soja": "🌱 大豆含有", "w_erdnuesse": "🥜 ピーナッツ含有",
         "w_vegan": "🥩 ヴィーガン非対応", "w_vegetarisch": "🥩 ベジタリアン非対応", "w_halal": "☪️ ハラール非対応", "w_koscher": "✡️ コーシャ非対応",
-        "placeholder": "バーコードを入力...", "hist_title": "🕒 履歴", "details": "🔬 成分と分析",
-        "nutri_title": "🥗 栄養品質", "cal_title": "🔥 カロリーチェック", "cal_slider": "一日の目標カロリー (kcal):",
-        "cal_percentage": "この商品は100gあたり一日の目標の **{:.1f}%** を消費します。", "de_ingredients": "🇩🇪 ドイツ語の成分リスト（翻訳）:"
+        "placeholder": "バーコードを入力...", "hist_title": "🕒 履歴", "details": "🔬 成分と分析"
     },
     "العربية": {
         "t1": "👤 الملف الشخصي", "t2": "📸 الماسح الضوئي", "t3": "⚙️ الإعدادات", "t4": "ℹ️ معلومات",
@@ -144,9 +123,7 @@ ui = {
         "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_histamin": "🍷 خطر الهيستامين", "w_sorbit": "🍬 يحتوي على السوربيتول",
         "w_sulfite": "🧪 يحتوي على الكبريتيت", "w_glutamat": "🍕 يحتوي على الغلوتامات", "w_gluten": "🌾 يحتوي على الغلوتين", "w_nuesse": "🌰 يحتوي على المكسرات", "w_soja": "🌱 يحتوي على الصويا", "w_erdnuesse": "🥜 يحتوي على الفول السوداني",
         "w_vegan": "🥩 ليس نباتيًا تامًا", "w_vegetarisch": "🥩 ليس نباتيًا", "w_halal": "☪️ غير متوافق مع الحلال", "w_koscher": "✡️ غير متوافق مع الكوشير",
-        "placeholder": "أدخل الباركود...", "hist_title": "🕒 السجل", "details": "🔬 المكونات والتحليل",
-        "nutri_title": "🥗 الجودة الغذائية", "cal_title": "🔥 فحص السعرات", "cal_slider": "السعرات الحرارية اليومية المستهدفة (kcal):",
-        "cal_percentage": "هذا المنتج يستهلك **{:.1f}%** من ميزانيتك اليومية لكل 100 جرام.", "de_ingredients": "🇩🇪 قائمة المكونات الألمانية (مترجمة):"
+        "placeholder": "أدخل الباركود...", "hist_title": "🕒 السجل", "details": "🔬 المكونات والتحليل"
     },
     "简体中文": {
         "t1": "👤 个人档案", "t2": "📸 扫描仪", "t3": "⚙️ 设置", "t4": "ℹ️ 信息",
@@ -163,9 +140,7 @@ ui = {
         "w_laktose": "🥛 含有乳糖/牛奶", "w_fruktose": "🍎 含有过糖", "w_histamin": "🍷 存在组胺风险", "w_sorbit": "🍬 含有山梨糖醇",
         "w_sulfite": "🧪 含有亚硫酸盐", "w_glutamat": "🍕 含有谷氨酸钠", "w_gluten": "🌾 含有麸质", "w_nuesse": "🌰 含有坚果", "w_soja": "🌱 含有大豆", "w_erdnuesse": "🥜 含有花生",
         "w_vegan": "🥩 非纯素食", "w_vegetarisch": "🥩 非素食", "w_halal": "☪️ 不符合清真标准", "w_koscher": "✡️ 不符合犹太洁食标准",
-        "placeholder": "输入条形码...", "hist_title": "🕒 扫描历史", "details": "🔬 成分与分析",
-        "nutri_title": "🥗 营养质量", "cal_title": "🔥 热量检查", "cal_slider": "每日目标热量 (kcal):",
-        "cal_percentage": "每100克该产品消耗每日目标的 **{:.1f}%**。", "de_ingredients": "🇩🇪 德语成分 list (翻译):"
+        "placeholder": "输入条形码...", "hist_title": "🕒 扫描历史", "details": "🔬 成分与分析"
     },
     "Русский": {
         "t1": "👤 Профиль", "t2": "📸 Сканер", "t3": "⚙️ Настройки", "t4": "ℹ️ Инфо",
@@ -182,9 +157,7 @@ ui = {
         "w_laktose": "🥛 Содержит лактозу/молоко", "w_fruktose": "🍎 Содержит фруктозу", "w_histamin": "🍷 Риск гистамина", "w_sorbit": "🍬 Содержит сорбит",
         "w_sulfite": "🧪 Содержит сульфиты", "w_glutamat": "🍕 Содержит глутамат", "w_gluten": "🌾 Содержит глютен", "w_nuesse": "🌰 Содержит орехи", "w_soja": "🌱 Содержит сою", "w_erdnuesse": "🥜 Содержит арахис",
         "w_vegan": "🥩 Не веганский продукт", "w_vegetarisch": "🥩 Не вегетарианский", "w_halal": "☪️ Не халяльно", "w_koscher": "✡️ Не кошерно",
-        "placeholder": "Введите штрихкод...", "hist_title": "🕒 История сканов", "details": "🔬 Ингредиенты и анализ",
-        "nutri_title": "🥗 Питательная ценность", "cal_title": "🔥 Проверка калорий", "cal_slider": "Ваша суточная норма калорий (ккал):",
-        "cal_percentage": "Этот продукт расходует **{:.1f}%** вашей суточной нормы на 100 г.", "de_ingredients": "🇩🇪 Список ингредиентов на немецком (перевод):"
+        "placeholder": "Введите штрихкод...", "hist_title": "🕒 История сканов", "details": "🔬 Ингредиенты и анализ"
     },
     "Polski": {
         "t1": "👤 Profil", "t2": "📸 Skaner", "t3": "⚙️ Ustawienia", "t4": "ℹ️ Info",
@@ -201,9 +174,7 @@ ui = {
         "w_laktose": "🥛 Zawiera laktozę/mleko", "w_fruktose": "🍎 Zawiera fruktozę", "w_histamin": "🍷 Ryzyko histaminy", "w_sorbit": "🍬 Zawiera sorbitol",
         "w_sulfite": "🧪 Zawiera siarczyny", "w_glutamat": "🍕 Zawiera glutaminian", "w_gluten": "🌾 Zawiera gluten", "w_nuesse": "🌰 Zawiera orzechy", "w_soja": "🌱 Zawiera soję", "w_erdnuesse": "🥜 Zawiera orzeszki ziemne",
         "w_vegan": "🥩 Nie dla wegan", "w_vegetarisch": "🥩 Nie dla wegetarian", "w_halal": "☪️ Niezgodny z Halal", "w_koscher": "✡️ Niezgodny z Koszer",
-        "placeholder": "Wpisz kod kreskowy...", "hist_title": "🕒 Ostatnie skany", "details": "🔬 Składniki i analiza",
-        "nutri_title": "🥗 Jakość odżywcza", "cal_title": "🔥 Licznik kalorii", "cal_slider": "Twoje dzienne zapotrzebowanie (kcal):",
-        "cal_percentage": "Ten produkt zużywa **{:.1f}%** Twojego dziennego limitu na 100g.", "de_ingredients": "🇩🇪 Niemiecka lista składników (Tłumaczenie):"
+        "placeholder": "Wpisz kod kreskowy...", "hist_title": "🕒 Ostatnie skany", "details": "🔬 Składniki i analiza"
     },
     "Français": {
         "t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Réglages", "t4": "ℹ️ Info",
@@ -220,9 +191,7 @@ ui = {
         "w_laktose": "🥛 Contient du lactose/lait", "w_fruktose": "🍎 Contient du fructose", "w_histamin": "🍷 Risque histamine", "w_sorbit": "🍬 Contient du sorbitol",
         "w_sulfite": "🧪 Contient des sulfites", "w_glutamat": "🍕 Contient du glutamate", "w_gluten": "🌾 Contient du gluten", "w_nuesse": "🌰 Contient des fruits à coque", "w_soja": "🌱 Contient du soja", "w_erdnuesse": "🥜 Contient des arachides",
         "w_vegan": "🥩 Non Végétalien", "w_vegetarisch": "🥩 Non Végétarien", "w_halal": "☪️ Non Halal", "w_koscher": "✡️ Non Cascher",
-        "placeholder": "Entrez le code-barres...", "hist_title": "🕒 Historique", "details": "🔬 Ingrédients & Analyse",
-        "nutri_title": "🥗 Qualité Nutritionnelle", "cal_title": "🔥 Contrôle Calories", "cal_slider": "Votre objectif calorique quotidien (kcal) :",
-        "cal_percentage": "Ce produit consomme **{:.1f}%** de votre budget quotidien pour 100g.", "de_ingredients": "🇩🇪 Liste des ingrédients en allemand (Traduit) :"
+        "placeholder": "Entrez le code-barres...", "hist_title": "🕒 Historique", "details": "🔬 Ingrédients & Analyse"
     },
     "Español": {
         "t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "t4": "ℹ️ Info",
@@ -239,9 +208,7 @@ ui = {
         "w_laktose": "🥛 Contiene lactosa/leche", "w_fruktose": "🍎 Contiene fructosa", "w_histamin": "🍷 Riesgo de histamina", "w_sorbit": "🍬 Contiene sorbitol",
         "w_sulfite": "🧪 Contiene sulfitos", "w_glutamat": "🍕 Contiene glutamato", "w_gluten": "🌾 Contiene gluten", "w_nuesse": "🌰 Contiene frutos de cáscara", "w_soja": "🌱 Contiene soja", "w_erdnuesse": "🥜 Contiene cacahuetes",
         "w_vegan": "🥩 No Vegano", "w_vegetarisch": "🥩 No Vegetariano", "w_halal": "☪️ No Halal", "w_koscher": "✡️ No Kosher",
-        "placeholder": "Escribe el código...", "hist_title": "🕒 Historial", "details": "🔬 Ingredientes y Análisis",
-        "nutri_title": "🥗 Calidad Nutricional", "cal_title": "🔥 Control de Calorías", "cal_slider": "Tu pauta calórica diaria (kcal):",
-        "cal_percentage": "Este producto consume el **{:.1f}%** de tu presupuesto diario por cada 100g.", "de_ingredients": "🇩🇪 Lista de ingredientes en alemán (Traducido):"
+        "placeholder": "Escribe el código...", "hist_title": "🕒 Historial", "details": "🔬 Ingredientes y Análisis"
     },
     "Português": {
         "t1": "👤 Perfil", "t2": "📸 Scanner", "t3": "⚙️ Definições", "t4": "ℹ️ Info",
@@ -258,9 +225,7 @@ ui = {
         "w_laktose": "🥛 Contém lactose/leite", "w_fruktose": "🍎 Contém frutose", "w_histamin": "🍷 Risco de histamina", "w_sorbit": "🍬 Contém sorbitol",
         "w_sulfite": "🧪 Contém sulfitos", "w_glutamat": "🍕 Contém glutamato", "w_gluten": "🌾 Contém glúten", "w_nuesse": "🌰 Contém frutos de casca rija", "w_soja": "🌱 Contém soja", "w_erdnuesse": "🥜 Contém amendoins",
         "w_vegan": "🥩 Não Vegano", "w_vegetarisch": "🥩 Não Vegetariano", "w_halal": "☪️ Não Halal", "w_koscher": "✡️ Não Kosher",
-        "placeholder": "Digite o código...", "hist_title": "🕒 Histórico", "details": "🔬 Ingredientes e Análise",
-        "nutri_title": "🥗 Qualidade Nutricional", "cal_title": "🔥 Verificação de Calorias", "cal_slider": "Sua meta calórica diária (kcal):",
-        "cal_percentage": "Este produto consome **{:.1f}%** do seu orçamento diário por 100g.", "de_ingredients": "🇩🇪 Lista de ingredientes em alemão (Traduzido):"
+        "placeholder": "Digite o código...", "hist_title": "🕒 Histórico", "details": "🔬 Ingredientes e Análise"
     },
     "ไทย": {
         "t1": "👤 โปรไฟล์", "t2": "📸 เครื่องสแกน", "t3": "⚙️ ตั้งค่า", "t4": "ℹ️ ข้อมูล",
@@ -269,7 +234,7 @@ ui = {
         "laktose": "แลคโตส / นม", "fruktose": "ฟรุกโตส", "histamin": "ฮิสตามีน", "sorbit": "ซอร์บิทอล",
         "gluten": "กลูเตน", "nuesse": "ถั่วเปลือกแข็ง", "soja": "ถั่วเหลือง", "erdnuesse": "ถั่วลิสง",
         "sulfite": "ซัลไฟต์", "glutamat": "ผงชูรส", "vegan": "วีแกน", "vegetarisch": "มังสวิรัติ", "halal": "ฮาลาล", "koscher": "โคเชอร์",
-        "scan_h": "เครื่องสแกน", "scan_p": "ใช้กล้องสแกน oder พิมพ์รหัสบาร์โค้ด",
+        "scan_h": "เครื่องสแกน", "scan_p": "ใช้กล้องสแกนหรือพิมพ์รหัสบาร์โค้ด",
         "btn_cam_start": "📸 เริ่มต้นการสแกน", "btn_cam_stop": "🛑 หยุดการสแกน",
         "safe": "✅ สินค้าปลอดภัยทานได้!", "safe_sub": "สินค้านี้ตรงกับโปรไฟล์ความปลอดภัยของคุณอย่างสมบูรณ์",
         "warn": "🛑 ไม่ปลอดภัย / ห้ามทาน!", "not_found": "⚠️ ไม่พบสินค้า", "no_conn": "📡 การเชื่อมต่อล้มเหลว",
@@ -277,9 +242,7 @@ ui = {
         "w_laktose": "🥛 มีส่วนผสมของแลคโตส/นม", "w_fruktose": "🍎 มีส่วนผสมของฟรุกโตส", "w_histamin": "🍷 มีความเสี่ยงจากฮิสตามีน", "w_sorbit": "🍬 มีส่วนผสมของซอร์บิทอล",
         "w_sulfite": "🧪 มีส่วนผสมของซัลไฟต์", "w_glutamat": "🍕 มีส่วนผสมของผงชูรส", "w_gluten": "🌾 มีส่วนผสมของกลูเตน", "w_nuesse": "🌰 มีส่วนผสมของถั่วเปลือกแข็ง", "w_soja": "🌱 มีส่วนผสม of ถั่วเหลือง", "w_erdnuesse": "🥜 มีส่วนผสมของถั่วลิสง",
         "w_vegan": "🥩 ไม่ใช่วีแกน", "w_vegetarisch": "🥩 ไม่ใช่มังสวิรัติ", "w_halal": "☪️ ไม่ผ่านมาตรฐานฮาลาล", "w_koscher": "✡️ ไม่ผ่านมาตรฐานโคเชอร์",
-        "placeholder": "พิมพ์บาร์โค้ด...", "hist_title": "🕒 ประวัติการสแกน", "details": "🔬 ส่วนผสมและการวิเคราะห์",
-        "nutri_title": "🥗 คุณภาพทางโภชนาการ", "cal_title": "🔥 ตรวจสอบแคลอรี่", "cal_slider": "เป้าหมายแคลอรี่รายวันของคุณ (kcal):",
-        "cal_percentage": "ผลิตภัณฑ์นี้ใช้ **{:.1f}%** ของเป้าหมายรายวันของคุณต่อ 100 กรัม", "de_ingredients": "🇩🇪 รายการส่วนผสมภาษาเยอรมัน (แปลแล้ว):"
+        "placeholder": "พิมพ์บาร์โค้ด...", "hist_title": "🕒 ประวัติการสแกน", "details": "🔬 ส่วนผสมและการวิเคราะห์"
     },
     "한국어": {
         "t1": "👤 프로필", "t2": "📸 스캐너", "t3": "⚙️ 설정", "t4": "ℹ️ 정보",
@@ -296,95 +259,22 @@ ui = {
         "w_laktose": "🥛 유당/우유 포함", "w_fruktose": "🍎 과당 포함", "w_histamin": "🍷 히스타민 위험 감지", "w_sorbit": "🍬 소르비톨 포함",
         "w_sulfite": "🧪 아황산염 포함", "w_glutamat": "🍕 글루타민산염 포함", "w_gluten": "🌾 글루텐 포함", "w_nuesse": "🌰 견과류 포함", "w_soja": "🌱 대두 포함", "w_erdnuesse": "🥜 땅콩 포함",
         "w_vegan": "🥩 비건이 아님", "w_vegetarisch": "🥩 채식이 아님", "w_halal": "☪️ 할랄 미인증", "w_koscher": "✡️ 코셔 미인증",
-        "placeholder": "바코드 입력...", "hist_title": "🕒 스캔 기록", "details": "🔬 성분 및 분석",
-        "nutri_title": "🥗 영양 품질", "cal_title": "🔥 칼로리 체크", "cal_slider": "하루 목표 칼로리 (kcal):",
-        "cal_percentage": "이 제품은 100g당 하루 목표량의 **{:.1f}%**를 소비합니다.", "de_ingredients": "🇩🇪 독일어 성분 목록 (번역됨):"
+        "placeholder": "바코드 입력...", "hist_title": "🕒 스캔 기록", "details": "🔬 성분 및 분석"
     }
 }
 
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
-# ==========================================
-# 3. INTERNES TRANSLATION WÖRTERBUCH (DE)
-# ==========================================
-# Automatische Übersetzung von Fachbegriffen für die deutsche Zutatenliste
-INGREDIENTS_DICT = {
-    "sugar": "Zucker", "palm oil": "Palmöl", "hazelnuts": "Haselnüsse", "skimmed milk powder": "Magermilchpulver",
-    "fat-reduced cocoa": "fettarmer Kakao", "emulsifier": "Emulgator", "lecithins": "Lecithine", "soya": "Soja",
-    "vanillin": "Vanillin", "water": "Wasser", "carbon dioxide": "Kohlensäure", "colour": "Farbstoff",
-    "acid": "Säuerungsmittel", "phosphoric acid": "Phosphorsäure", "natural flavouring": "natürliches Aroma",
-    "flavouring caffeine": "Aroma Koffein", "tartaric acid": "Weinsäure", "sodium hydrogen carbonate": "Natriumhydrogencarbonat",
-    "sweeteners": "Süßungsmittel", "sodium cyclamate": "Natriumcyclamat", "acesulfame k": "Acesulfam-K",
-    "sodium saccharin": "Saccharin-Natrium", "flavourings": "Aromen", "carotenes": "Karotine", "wheat flour": "Weizenmehl",
-    "vegetable fats": "pflanzliche Fette", "shea": "Shea", "whole wheat flour": "Vollkornweizenmehl",
-    "butterfat": "Buttereinfett", "wheat starch": "Weizenstärke", "whey product": "Molkenerzeugnis",
-    "milk": "Milch", "salt": "Salz", "glucose syrup": "Glukosesirup", "barley malt extract": "Gerstenmalzextrakt",
-    "cocoa butter": "Kakaobutter", "cocoa mass": "Kakaomasse", "whole milk powder": "Vollmilchpulver",
-    "lactose": "Laktose", "whey powder": "Molkenpulver", "egg white": "Eiweiß", "yolk": "Eigelb",
-    "preservative": "Konservierungsstoff", "citric acid": "Zitronensäure", "ascorbic acid": "Ascorbinsäure",
-    "thickener": "Verdickungsmittel", "xanthan gum": "Xanthan", "pectin": "Pektin", "yeast": "Hefe",
-    "gelatin": "Gelatine", "peanuts": "Erdnüsse", "almonds": "Mandeln", "walnuts": "Walnüsse",
-    "cashews": "Cashewnüsse", "pecan nuts": "Pekannüsse", "brazil nuts": "Paranüsse", "pistachio nuts": "Pistazien",
-    "macadamia nuts": "Macadamianüsse", "celery": "Sellerie", "mustard": "Senf", "sesame seeds": "Sesamsamen",
-    "sulphur dioxide": "Schwefeldioxid", "sulphites": "Sulfite", "lupin": "Lupine", "molluscs": "Weichtiere"
-}
-
-def translate_ingredients_to_de(text):
-    if not text:
-        return "Keine Angaben verfügbar."
-    text_lower = text.lower()
-    for eng, de in INGREDIENTS_DICT.items():
-        text_lower = text_lower.replace(eng, de)
-    # Erste Letter groß machen für saubere Optik
-    return text_lower.capitalize()
-
-# ==========================================
-# 4. OFFLINE DATENBANK (ERWEITERT FÜR AKTUELLE NUTRI- & KALORIENMETRIKEN)
-# ==========================================
 OFFLINE_DATA = {
-    "3017620425035": {
-        "product_name": "Nutella", 
-        "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 539, "carbohydrates_100g": 56.3, "fat_100g": 30.9, "proteins_100g": 6.3}
-    },
-    "5449000000996": {
-        "product_name": "Coca Cola Classic", 
-        "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 42, "carbohydrates_100g": 10.6, "fat_100g": 0, "proteins_100g": 0}
-    },
-    "40335711": {
-        "product_name": "Ahoj-Brause Pulver", 
-        "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure (L+), Säureregulator: Natriumhydrogencarbonat, Süßungsmittel: Natriumcyclamat, Acesulfam-K und Saccharin-Natrium, Aromen, Farbstoffe: Karotine, E141, Anthocyane.", 
-        "image_front_url": "",
-        "nutriscore_grade": "d",
-        "nutriments": {"energy-kcal_100g": 328, "carbohydrates_100g": 67, "fat_100g": 0, "proteins_100g": 0}
-    },
-    "4002234027733": {
-        "product_name": "Knoppers", 
-        "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Magermilchpulver (13,5%), Weizenmehl (12,3%), Haselnüsse (9,1%), Vollkornweizenmehl (6,1%), Kakao, Butterreinfett, Magerkakao, Weizenstärke, Emulgator Lecithine (Soja), Molkenerzeugnis.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 551, "carbohydrates_100g": 52.4, "fat_100g": 34.2, "proteins_100g": 8.8}
-    },
-    "4006544418208": {
-        "product_name": "Test Bio Haferdrink", 
-        "ingredients_text": "Wasser, Vollkornhafer (12%), Sonnenblumenöl, Meersalz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "a",
-        "nutriments": {"energy-kcal_100g": 45, "carbohydrates_100g": 6.5, "fat_100g": 1.5, "proteins_100g": 1.0}
-    }
+    "3017620425035": {"product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg"},
+    "5449000000996": {"product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg"},
+    "40335711": {"product_name": "Ahoj-Brause Pulver", "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure (L+), Säureregulator: Natriumhydrogencarbonat, Süßungsmittel: Natriumcyclamat, Acesulfam-K und Saccharin-Natrium, Aromen, Farbstoffe: Karotine, E141, Anthocyane.", "image_front_url": ""},
+    "4002234027733": {"product_name": "Knoppers", "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Magermilchpulver (13,5%), Weizenmehl (12,3%), Haselnüsse (9,1%), Vollkornweizenmehl (6,1%), Kakao, Butterreinfett, Magerkakao, Weizenstärke, Emulgator Lecithine (Soja), Molkenerzeugnis.", "image_front_url": ""},
+    "4006544418208": {"product_name": "Test Produkt", "ingredients_text": "Fallback für den Barcode 4006544418208", "image_front_url": ""}
 }
 
-# ==========================================
-# 5. TAB-LAYOUT DER BENUTZEROBERFLÄCHE
-# ==========================================
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
-# --- TAB 1: SCHUTZPROFIL ---
 with tab_profil:
     st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['sub']}</p>", unsafe_allow_html=True)
@@ -415,17 +305,11 @@ with tab_profil:
     if st.button(f"💾 {t['save']}"):
         st.success(t["saved_msg"])
 
-# --- TAB 2: LIVE-SCANNER & AUSWERTUNG ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
     
-    # Interaktiver Kalorien-Richtwert Slider zur dynamischen Berechnung
-    with st.container(border=True):
-        st.markdown(f"<h5>{t['cal_title']}</h5>", unsafe_allow_html=True)
-        daily_cal_budget = st.slider(t["cal_slider"], min_value=1200, max_value=4000, value=2000, step=50)
-
-    # Textfeld für manuelle Eingabe oder Auto-Fill des Scanners
+    # Textfeld aktualisiert sich jetzt automatisch mit dem gescannten Wert
     barcode_input = st.text_input("Barcode Entry", value=st.session_state.manual_code, placeholder=t["placeholder"], label_visibility="collapsed")
     
     if not barcode_input:
@@ -438,68 +322,34 @@ with tab_scanner:
                 st.session_state.cam_on = False
                 st.rerun()
             
-            # Professioneller WebRTC HTML5-Scanner (iPad Air M3 optimiert mit Rückkamera)
-            with st.container(border=True):
-                components.html("""
-<style>
-#reader { width: 100%; border-radius: 20px; overflow: hidden; position: relative; background-color: #000; }
-#reader video { object-fit: cover !important; border-radius: 20px; }
-.scanner-laser { position: absolute; left: 10%; width: 80%; height: 2px; background-color: #EF4444; box-shadow: 0 0 10px #EF4444; animation: scanning 2s infinite ease-in-out; z-index: 100; pointer-events: none; }
-@keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
-#success-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(79, 70, 229, 0.9); backdrop-filter: blur(5px); z-index: 500; align-items: center; justify-content: center; border-radius: 20px; }
-.scan-card { text-align: center; color: white; font-family: -apple-system, sans-serif; animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes popUp { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-</style>
+            # --- NEUER KAMERA-TEIL FÜR IPAD / IOS ---
+            img_file_buffer = st.camera_input("Bringe den Code ins Kamerafenster", key="qr_camera")
 
-<div id="reader" style="position: relative;">
-    <div class="scanner-laser"></div>
-    <div id="success-overlay">
-        <div class="scan-card">
-            <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
-            <div style="font-size: 24px; font-weight: 800; letter-spacing: 1px;">CODE ERKANNT!</div>
-            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse startet...</div>
-        </div>
-    </div>
-</div>
+            if img_file_buffer is not None:
+                # Bild konvertieren für OpenCV
+                bytes_data = img_file_buffer.getvalue()
+                cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 15, qrbox: { width: 280, height: 160 } };
+                # OpenCV QR-Code Detektor initialisieren
+                detector = cv2.QRCodeDetector()
+                data, bbox, straight_qrcode = detector.detectAndDecode(cv2_img)
 
-    // "facingMode: environment" zwingt mobile Safari- und Chrome-Browser auf dem iPad M3 zur rückseitigen Kamera
-    html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-            document.getElementById("success-overlay").style.display = "flex";
-            document.querySelector(".scanner-laser").style.display = "none";
-            
-            const cleanCode = decodedText.replace(/[^0-9]/g, '');
-            
-            html5QrCode.stop().then(() => {
-                const url = new URL(window.parent.location.href);
-                url.searchParams.set("scanned_barcode", cleanCode);
-                window.parent.location.replace(url.href);
-            }).catch(err => {
-                const url = new URL(window.parent.location.href);
-                url.searchParams.set("scanned_barcode", cleanCode);
-                window.parent.location.replace(url.href);
-            });
-        },
-        (errorMessage) => { /* Kontinuierlicher Scan, Fehler ignorieren */ }
-    ).catch(err => {
-        alert("Kamera-Zugriff verweigert oder nicht verfügbar. Bitte in den iPad-Einstellungen erlauben.");
-    });
-}
-setTimeout(startScanner, 400);
-</script>
-""", height=360)
+                if data:
+                    # Bereinigen, falls Sonderzeichen drin sind
+                    clean_code = "".join(filter(str.isdigit, str(data)))
+                    
+                    st.success("🎉 QR-Code erfolgreich erkannt!")
+                    st.session_state.manual_code = clean_code
+                    st.session_state.cam_on = False  # Kamera direkt ausschalten
+                    st.rerun()  # UI neu laden, um die Analyse zu starten
+                else:
+                    st.warning("Es wurde kein QR-Code erkannt. Bitte achte auf gute Beleuchtung und halte den Code ruhig.")
+            # --- ENDE KAMERA-TEIL ---
+
     else:
         st.session_state.cam_on = False
 
-    # VERARBEITUNG UND ALGORITHMUS NACH ERFOLGREICHEM SCAN
+    # DIESER BLOCK FÜHRT NUN AUTOMATISCH AUS, SOBALD EIN CODE EINGETRAGEN WURDE!
     if barcode_input:
         barcode = "".join(filter(str.isdigit, str(barcode_input)))
         
@@ -517,6 +367,7 @@ setTimeout(startScanner, 400);
                 except:
                     pass
                 
+                # Wenn API fehlschlägt, in lokaler Test-Datenbank suchen
                 if not product and barcode in OFFLINE_DATA:
                     product = OFFLINE_DATA[barcode]
                     is_offline = True
@@ -524,18 +375,19 @@ setTimeout(startScanner, 400);
                 if product:
                     p_name = product.get('product_name', 'Unbekanntes Produkt')
                     
+                    # Historie aktualisieren
                     if {"name": p_name, "code": barcode} not in st.session_state.history:
                         st.session_state.history.insert(0, {"name": p_name, "code": barcode})
                         if len(st.session_state.history) > 4: st.session_state.history.pop()
                     
+                    # Zutaten und Labels auslesen
                     tags_text = " ".join(product.get("allergens_tags", [])) + " " + " ".join(product.get("ingredients_analysis_tags", [])) + " " + " ".join(product.get("labels_tags", []))
-                    raw_ingredients = str(product.get("ingredients_text", "")) or str(product.get("ingredients_text_de", "")) or str(product.get("ingredients_text_en", ""))
-                    all_text = (raw_ingredients + " " + str(product.get("ingredients_text_en", "")) + " " + str(product.get("ingredients_text_fr", "")) + " " + str(product.get("ingredients_text_de", "")) + " " + tags_text).lower()
+                    all_text = (str(product.get("ingredients_text", "")) + " " + str(product.get("ingredients_text_en", "")) + " " + str(product.get("ingredients_text_fr", "")) + " " + str(product.get("ingredients_text_de", "")) + " " + tags_text).lower()
                     
                     warnings = []
                     p = st.session_state.profile
                     
-                    # Logische Prüfroutinen für Intoleranzen und Allergene
+                    # Abgleich mit Profil
                     if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "en:milk"]): warnings.append(t["w_laktose"])
                     if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]): warnings.append(t["w_fruktose"])
                     if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "tomate", "schokolade"]): warnings.append(t["w_histamin"])
@@ -568,37 +420,13 @@ setTimeout(startScanner, 400);
                             st.image(product["image_front_url"], use_container_width=True)
                             st.markdown("</div>", unsafe_allow_html=True)
                     
-                    # ZUSATZANZEIGE: NUTRI-SCORE & KALORIENBERECHCHNUNG
-                    st.write("")
-                    st.markdown(f"### {t['nutri_title']}")
-                    ns_grade = str(product.get("nutriscore_grade", "unknown")).lower()
-                    if ns_grade in ["a", "b", "c", "d", "e"]:
-                        st.markdown(f"<span class='nutri-badge nutri-{ns_grade}'>Nutri-Score {ns_grade.upper()}</span>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<span class='nutri-badge nutri-unknown'>Nutri-Score Unbekannt</span>", unsafe_allow_html=True)
-                    
-                    # Kalorien-Metrik auslesen und mit Slider verrechnen
-                    nutriments = product.get("nutriments", {})
-                    kcal_100g = nutriments.get("energy-kcal_100g", nutriments.get("energy-kcal", 0))
-                    
-                    if kcal_100g:
-                        pct_of_daily = (float(kcal_100g) / daily_cal_budget) * 100
-                        st.metric(label=f"{t['cal_title']} (pro 100g)", value=f"{kcal_100g} kcal")
-                        st.info(t["cal_percentage"].format(pct_of_daily))
-                    
-                    # Detaillierte Zutaten-Expander inklusive automatischer Übersetzung ins Deutsche
                     st.write("")
                     with st.expander(t["details"]):
-                        if is_offline: st.caption("ℹ️ Offline-Testdatenbank aktiv.")
-                        st.write(f"**Original Zutaten:** {raw_ingredients if raw_ingredients else 'Keine Angaben verfügbar.'}")
-                        
-                        # Deutsche Übersetzung anzeigen
-                        de_translated = translate_ingredients_to_de(raw_ingredients)
-                        st.write(f"**{t['de_ingredients']}** {de_translated}")
+                        if is_offline: st.caption("ℹ️ Offline Fallback genutzt.")
+                        st.write(f"**Zutatenliste:** {product.get('ingredients_text', 'Keine detaillierten Angaben verfügbar.')}")
                 else:
                     st.error(t["not_found"])
 
-    # SCAN-HISTORIE ANZEIGEN
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
@@ -607,7 +435,6 @@ setTimeout(startScanner, 400);
                 st.session_state.manual_code = item['code']
                 st.rerun()
 
-# --- TAB 3: EINSTELLUNGEN ---
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
@@ -618,7 +445,6 @@ with tab_settings:
             st.session_state.lang = new_lang
             st.rerun()
 
-# --- TAB 4: LIZENZ & ENTWICKLER-INFO ---
 with tab_info:
     with st.container(border=True):
         st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
