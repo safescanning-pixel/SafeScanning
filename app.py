@@ -122,7 +122,7 @@ def throw_confetti():
     )
 
 # ==========================================
-# 3. SESSION STATES (Bleiben jetzt erhalten!)
+# 3. SESSION STATES
 # ==========================================
 if 'lang' not in st.session_state: 
     st.session_state.lang = "Deutsch"
@@ -178,7 +178,7 @@ ui = {
         "vegan": "Vegan", 
         "vegetarisch": "Vegetarisch", 
         "halal": "Halal (حلال)", 
-        "koscher": "Koscher (כָּשֵׁר)",
+        "koscher": "Koscher (כָּشֵׁר)",
         "scan_h": "Scanner", 
         "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
         "btn_cam_start": "📸 Scanner starten", 
@@ -286,7 +286,7 @@ ui = {
         "w_sulfite": "🧪 含有亚硫酸盐", "w_glutamat": "🍕 含有谷氨酸钠", "w_gluten": "🌾 含有麸质", "w_nuesse": "🌰 含有坚果", "w_soja": "🌱 含有大豆", "w_erdnuesse": "🥜 含有花生",
         "w_vegan": "🥩 非纯素食", "w_vegetarisch": "🥩 非素食", "w_halal": "☪️ 不符合清真", "w_koscher": "✡️ 不符合犹太洁食",
         "placeholder": "输入条形码...", "hist_title": "🕒 历史", "details": "🔬 成分与分析",
-        "nutri_title": "🥗 营养质量", "cal_title": "🔥 热量检查", "cal_slider": "每日目标热量:",
+        "nutri_title": "🥗 营养质量", "cal_title": "热量检查", "cal_slider": "每日目标热量:",
         "cal_percentage": "消耗每日目标的 **{:.1f}%**。", "de_ingredients": "🇩🇪 德语成分:"
     },
     "Русский": {
@@ -310,7 +310,7 @@ ui = {
     },
     "Polski": {
         "t1": "👤 Profil", "t2": "📸 Skaner", "t3": "⚙️ Ustawienia", "t4": "ℹ️ Info",
-        "title": "Mój Profil", "sub": "Skonfiguruj swoje alergie", "save": "Zapisz",
+        "title": "Mój Profil", "sub": "Skonfiguruj swoje algerie", "save": "Zapisz",
         "cat_allergy": "Alergeny", "cat_additives": "Dodatki", "cat_lifestyle": "Styl życia",
         "laktose": "Laktoza / Mleko", "fruktose": "Fruktoza", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Orzechy", "soja": "Soja", "erdnuesse": "Orzeszki ziemne",
@@ -348,7 +348,7 @@ ui = {
     },
     "Español": {
         "t1": "👤 Perfil", "t2": "📸 Escáner", "t3": "⚙️ Ajustes", "t4": "ℹ️ Info",
-        "title": "Mi Perfil", "sub": "Configura tus alergias", "save": "Guardar",
+        "title": "Mi Perfil", "sub": "Configura tus allergies", "save": "Guardar",
         "cat_allergy": "Alérgenos", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de vida",
         "laktose": "Lactosa / Leche", "fruktose": "Fructosa", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Frutos secos", "soja": "Soja", "erdnuesse": "Cacahuetes",
@@ -382,7 +382,7 @@ ui = {
         "w_vegan": "🥩 Não Vegano", "w_vegetarisch": "🥩 Não Vegetariano", "w_halal": "☪️ Não Halal", "w_koscher": "✡️ Não Kosher",
         "placeholder": "Código...", "hist_title": "🕒 Histórico", "details": "🔬 Ingredientes",
         "nutri_title": "🥗 Nutrição", "cal_title": "🔥 Calorias", "cal_slider": "Meta calórica (kcal):",
-        "cal_percentage": "Consome **{:.1f}%** do seu orçamento.", "de_ingredients": "🇩🇪 Ingredientes:"
+        "cal_percentage": "Consome **{:.1f}%** do seu orçamento.", "de_ingredients": "🇩🇪 Ingrédients:"
     },
     "ไทย": {
         "t1": "👤 โปรไฟล์", "t2": "📸 สแกนเนอร์", "t3": "⚙️ ตั้งค่า", "t4": "ℹ️ ข้อมูล",
@@ -418,7 +418,7 @@ ui = {
         "w_laktose": "🥛 유당 포함", "w_fruktose": "🍎 과당 포함", "w_histamin": "🍷 히스타민 위험", "w_sorbit": "🍬 소르비톨 포함",
         "w_sulfite": "🧪 아황산염 포함", "w_glutamat": "🍕 글루타민 포함", "w_gluten": "🌾 글루텐 포함", "w_nuesse": "🌰 견과류 포함", "w_soja": "🌱 대두 포함", "w_erdnuesse": "🥜 땅콩 포함",
         "w_vegan": "🥩 비건 아님", "w_vegetarisch": "🥩 채식 아님", "w_halal": "☪️ 할랄 아님", "w_koscher": "✡️ 코셔 아님",
-        "placeholder": "바코드...", "hist_title": "🕒 기록", "details": "🔬 성분",
+        "placeholder": "바코드...", "記録": "🕒 기록", "details": "🔬 성분",
         "nutri_title": "🥗 영양", "cal_title": "🔥 칼로리", "cal_slider": "하루 목표 (kcal):",
         "cal_percentage": "하루 목표의 **{:.1f}%** 소비.", "de_ingredients": "🇩🇪 독일어 성분:"
     }
@@ -441,7 +441,7 @@ INGREDIENTS_DICT = {
     "butterfat": "Buttereinfett", "wheat starch": "Weizenstärke", "whey product": "Molkenerzeugnis",
     "milk": "Milch", "salt": "Salz", "glucose syrup": "Glukosesirup", "barley malt extract": "Gerstenmalzextrakt",
     "cocoa butter": "Kakaobutter", "cocoa mass": "Kakaomasse", "whole milk powder": "Vollmilchpulver",
-    "lactose": "Laktose", "whey powder": "Molkenpulver", "egg white": "Eiweiß", "yolk": "Eigelb",
+    "lactose": "Laktose", "whey powder": "Molkenpowder", "egg white": "Eiweiß", "yolk": "Eigelb",
     "preservative": "Konservierungsstoff", "citric acid": "Zitronensäure", "ascorbic acid": "Ascorbinsäure",
     "thickener": "Verdickungsmittel", "xanthan gum": "Xanthan", "pectin": "Pektin", "yeast": "Hefe",
     "gelatin": "Gelatine", "peanuts": "Erdnüsse", "almonds": "Mandeln", "walnuts": "Walnüsse",
@@ -471,7 +471,7 @@ def translate_ingredients_to_de(text):
     return text_lower.capitalize()
 
 # ==========================================
-# 6. ERWEITERTE OFFLINE DATENBANK (PRÄSENTATIONS-BACKUP)
+# 6. ERWEITERTE OFFLINE DATENBANK
 # ==========================================
 OFFLINE_DATA = {
     "3017620425035": {
@@ -611,7 +611,7 @@ with tab_scanner:
                 st.rerun()
             
             # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - NAHTLOSER ÜBERGANG OHNE RELOAD!
+            # PROFESSIONELLER SCANNER - VOLLAUTOMATISCH OHNE ENTER / REFRESH
             # -------------------------------------------------------------
             with st.container(border=True):
                 components.html("""
@@ -632,7 +632,7 @@ with tab_scanner:
 
 <div id="success-overlay">
     <div style="font-size: 50px; margin-bottom: 10px;">🔄</div>
-    <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">PRODUKT WIRD GELADEN...</h3>
+    <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">PRODUKT WIRD ANALYSIERT...</h3>
     <p id="barcode-display" style="font-size: 26px; font-weight: 900; color: #4F46E5; margin: 10px 0; font-family: monospace;"></p>
 </div>
 
@@ -650,43 +650,57 @@ function startScanner() {
         (decodedText) => {
             finalCode = decodedText.replace(/[^0-9]/g, '');
             
-            // Kamera ausschalten und Lade-Overlay anzeigen
             html5QrCode.stop().then(() => {
                 document.getElementById('reader-container').style.display = 'none';
                 document.getElementById('success-overlay').style.display = 'block';
                 document.getElementById('barcode-display').innerText = finalCode;
                 
-                // NAHTLOSE ÜBERGABE AN STREAMLIT (OHNE RELOAD)
                 const parentDoc = window.parent.document;
-                
-                // Suche das von Streamlit generierte Textfeld (Label wurde in Python definiert)
                 const stInputs = parentDoc.querySelectorAll('input[type="text"]');
                 let targetInput = null;
+                
                 stInputs.forEach(input => {
-                    if (input.getAttribute('aria-label') === 'Barcode Entry') {
+                    if (input.getAttribute('aria-label') === 'Barcode Entry' || 
+                        input.placeholder.includes('Barcode') || 
+                        input.placeholder.includes('barcode')) {
                         targetInput = input;
                     }
                 });
 
                 if (targetInput) {
-                    // React Event-Trigger Hack, damit Streamlit die Änderung bemerkt
+                    targetInput.focus();
+                    
+                    // React-kompatibles Setzen des Wertes
                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                     nativeInputValueSetter.call(targetInput, finalCode);
                     
-                    // Input-Event feuern
+                    // Events abfeuern, um Datensynchronisation anzustoßen
                     targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                     
-                    // Enter-Tastendruck simulieren, um die Analyse sofort zu starten!
-                    targetInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, keyCode: 13, key: 'Enter' }));
+                    // Enter-Simulations-Event für absolute Sicherheit
+                    const enterEvent = new KeyboardEvent('keydown', { 
+                        bubbles: true, 
+                        cancelable: true, 
+                        keyCode: 13, 
+                        which: 13, 
+                        key: 'Enter', 
+                        code: 'Enter' 
+                    });
+                    targetInput.dispatchEvent(enterEvent);
+                    
+                    // Der magische Kniff: Das Verlassen des Feldes (blur) zwingt Streamlit zum sofortigen Submit!
+                    setTimeout(() => {
+                        targetInput.blur();
+                    }, 50);
                 } else {
-                    // Fallback (falls das Feld wider Erwarten nicht gefunden wird)
                     const url = new URL(window.parent.location.href);
                     url.searchParams.set("scanned_barcode", finalCode);
                     window.parent.location.assign(url.href);
                 }
             });
         },
-        (errorMessage) => { /* Wird bei jedem Frame ohne Code ignoriert */ }
+        (errorMessage) => { }
     ).catch(err => {
         document.getElementById('reader').innerHTML = "<p style='color:white; padding:20px;'>Kamerazugriff verweigert oder nicht verfügbar. Bitte im Browser erlauben.</p>";
     });
@@ -733,7 +747,6 @@ setTimeout(startScanner, 400);
                     warnings = []
                     p = st.session_state.profile
                     
-                    # Logische Prüfroutinen für Intoleranzen und Allergene
                     if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "en:milk"]): warnings.append(t["w_laktose"])
                     if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]): warnings.append(t["w_fruktose"])
                     if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "tomate", "schokolade", "kakao"]): warnings.append(t["w_histamin"])
@@ -766,7 +779,6 @@ setTimeout(startScanner, 400);
                             st.image(product["image_front_url"], use_container_width=True)
                             st.markdown("</div>", unsafe_allow_html=True)
                     
-                    # ZUSATZANZEIGE: NUTRI-SCORE & KALORIENBERECHCHNUNG
                     st.write("")
                     st.markdown(f"### {t['nutri_title']}")
                     ns_grade = str(product.get("nutriscore_grade", "unknown")).lower()
@@ -775,7 +787,6 @@ setTimeout(startScanner, 400);
                     else:
                         st.markdown(f"<span class='nutri-badge nutri-unknown'>Nutri-Score Unbekannt</span>", unsafe_allow_html=True)
                     
-                    # Kalorien-Metrik auslesen und mit Slider verrechnen
                     nutriments = product.get("nutriments", {})
                     kcal_100g = nutriments.get("energy-kcal_100g", nutriments.get("energy-kcal", 0))
                     
@@ -784,13 +795,11 @@ setTimeout(startScanner, 400);
                         st.metric(label=f"{t['cal_title']} (pro 100g)", value=f"{kcal_100g} kcal")
                         st.info(t["cal_percentage"].format(pct_of_daily))
                     
-                    # Detaillierte Zutaten-Expander inklusive automatischer Übersetzung ins Deutsche
                     st.write("")
                     with st.expander(t["details"]):
                         if is_offline: st.caption("ℹ️ Offline-Testdatenbank aktiv.")
                         st.write(f"**Original Zutaten:** {raw_ingredients if raw_ingredients else 'Keine Angaben verfügbar.'}")
                         
-                        # Deutsche Übersetzung anzeigen
                         de_translated = translate_ingredients_to_de(raw_ingredients)
                         st.write(f"**{t['de_ingredients']}** {de_translated}")
                 else:
