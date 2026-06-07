@@ -6,6 +6,7 @@ if "scanned_barcode" in st.query_params:
     scanned = st.query_params["scanned_barcode"]
     if scanned:
         st.session_state.manual_code = scanned
+        st.session_state.cam_on = False  # WICHTIG: Schaltet die Kamera im Streamlit-Backend ab
         st.query_params.clear()
         st.rerun()
 
@@ -395,11 +396,22 @@ function startScanner() {
         (decodedText) => {
             document.getElementById("success-overlay").style.display = "flex";
             document.querySelector(".scanner-laser").style.display = "none";
-            setTimeout(() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set("scanned_barcode", decodedText);
-                window.location.href = url.href;
-            }, 500);
+            
+            // WICHTIG: Stoppt den Hardware-Zugriff der Kamera vor dem Reload
+            html5QrCode.stop().then(() => {
+                setTimeout(() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("scanned_barcode", decodedText);
+                    window.location.href = url.href;
+                }, 500);
+            }).catch((err) => {
+                // Falls das Stoppen hakt, trotzdem weiterleiten
+                setTimeout(() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("scanned_barcode", decodedText);
+                    window.location.href = url.href;
+                }, 500);
+            });
         },
         (errorMessage) => {}
     ).catch(err => {
