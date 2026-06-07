@@ -9,6 +9,7 @@ import time
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
 # URL-Parameter sofort zu Beginn verarbeiten, um Weiterleitungs-Schleifen zu vermeiden
+# Das funktioniert jetzt nahtlos im selben Tab, sodass alle Einstellungen erhalten bleiben!
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params.get("scanned_barcode")
     if scanned:
@@ -121,7 +122,7 @@ def throw_confetti():
     )
 
 # ==========================================
-# 3. SESSION STATES
+# 3. SESSION STATES (Bleiben jetzt erhalten!)
 # ==========================================
 if 'lang' not in st.session_state: 
     st.session_state.lang = "Deutsch"
@@ -610,7 +611,7 @@ with tab_scanner:
                 st.rerun()
             
             # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - MIT iPADOS SANDBOX-BYPASS (USER GESTURE)
+            # PROFESSIONELLER SCANNER - SAME TAB FIX (Session State bleibt!)
             # -------------------------------------------------------------
             with st.container(border=True):
                 components.html("""
@@ -621,7 +622,7 @@ with tab_scanner:
 @keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
 #success-overlay { display: none; text-align: center; padding: 30px 15px; background: #E0E7FF; border-radius: 20px; margin-top: 10px; animation: fadeIn 0.3s ease-in; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.scan-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background-color: #4F46E5; color: white !important; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(79,70,229,0.3); font-family: -apple-system, sans-serif; transition: background 0.2s; }
+.scan-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background-color: #4F46E5; color: white !important; border: none; cursor: pointer; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(79,70,229,0.3); font-family: -apple-system, sans-serif; transition: background 0.2s; }
 .scan-btn:hover { background-color: #4338CA; }
 </style>
 
@@ -635,12 +636,22 @@ with tab_scanner:
     <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
     <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">CODE ERKANNT</h3>
     <p id="barcode-display" style="font-size: 26px; font-weight: 900; color: #4F46E5; margin: 10px 0; font-family: monospace;"></p>
-    <p style="color:#6B7280; font-size:14px; margin-bottom:20px; font-family:-apple-system, sans-serif;">Das iPad erfordert einen manuellen Klick, um fortzufahren.</p>
-    <a id="nav-link" class="scan-btn" target="_parent" href="#">🔍 Produkt analysieren</a>
+    <p style="color:#6B7280; font-size:14px; margin-bottom:20px; font-family:-apple-system, sans-serif;">Tippe auf den Button, um das Produkt direkt hier zu laden.</p>
+    
+    <button id="nav-btn" class="scan-btn" onclick="sendToStreamlit()">🔍 Produkt analysieren</button>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+let finalCode = "";
+
+// Diese Funktion zwingt Safari dazu, das Hauptfenster im gleichen Tab neu zu laden
+function sendToStreamlit() {
+    const url = new URL(window.parent.location.href);
+    url.searchParams.set("scanned_barcode", finalCode);
+    window.parent.location.assign(url.href);
+}
+
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 15, qrbox: { width: 280, height: 160 } };
@@ -649,21 +660,13 @@ function startScanner() {
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            const cleanCode = decodedText.replace(/[^0-9]/g, '');
+            finalCode = decodedText.replace(/[^0-9]/g, '');
             
-            // 1. Kamera sofort ausschalten und ausblenden
+            // Kamera ausschalten und Button-Menü einblenden
             html5QrCode.stop().then(() => {
                 document.getElementById('reader-container').style.display = 'none';
-                
-                // 2. Button-Menü einblenden
                 document.getElementById('success-overlay').style.display = 'block';
-                document.getElementById('barcode-display').innerText = cleanCode;
-                
-                // 3. Dem Button die korrekte Weiterleitungs-URL zuweisen
-                // Durch den expliziten Klick des Nutzers wird die Sandbox umgangen
-                const url = new URL(window.parent.location.href);
-                url.searchParams.set("scanned_barcode", cleanCode);
-                document.getElementById('nav-link').href = url.href;
+                document.getElementById('barcode-display').innerText = finalCode;
             });
         },
         (errorMessage) => { /* Wird bei jedem Frame ohne Code ignoriert */ }
