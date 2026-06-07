@@ -333,7 +333,7 @@ ui = {
         "cat_allergy": "Allergènes", "cat_additives": "Additifs", "cat_lifestyle": "Style de vie",
         "laktose": "Lactose / Lait", "fruktose": "Fructose", "histamin": "Histamine", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Fruits à coque", "soja": "Soja", "erdnuesse": "Arachides",
-        "sulfite": "Sulfites", "glutamat": "Glutamate", "vegan": "Végétalien", "vegetarisch": "Végétarien", "halal": "Halal", "koscher": "Cascher",
+        "sulfite": "Sulfites", "glutamat": "Glamate", "vegan": "Végétalien", "vegetarisch": "Végétarien", "halal": "Halal", "koscher": "Cascher",
         "scan_h": "Scanner", "scan_p": "Utilisez l'appareil photo",
         "btn_cam_start": "📸 Activer le scanner", "btn_cam_stop": "🛑 Arrêter",
         "safe": "✅ SÛR !", "safe_sub": "Correspond à votre profil.",
@@ -611,7 +611,7 @@ with tab_scanner:
                 st.rerun()
             
             # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - SAME TAB FIX (Session State bleibt!)
+            # PROFESSIONELLER SCANNER - NAHTLOSER ÜBERGANG OHNE RELOAD!
             # -------------------------------------------------------------
             with st.container(border=True):
                 components.html("""
@@ -622,8 +622,6 @@ with tab_scanner:
 @keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
 #success-overlay { display: none; text-align: center; padding: 30px 15px; background: #E0E7FF; border-radius: 20px; margin-top: 10px; animation: fadeIn 0.3s ease-in; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.scan-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background-color: #4F46E5; color: white !important; border: none; cursor: pointer; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(79,70,229,0.3); font-family: -apple-system, sans-serif; transition: background 0.2s; }
-.scan-btn:hover { background-color: #4338CA; }
 </style>
 
 <div id="reader-container">
@@ -633,24 +631,14 @@ with tab_scanner:
 </div>
 
 <div id="success-overlay">
-    <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
-    <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">CODE ERKANNT</h3>
+    <div style="font-size: 50px; margin-bottom: 10px;">🔄</div>
+    <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">PRODUKT WIRD GELADEN...</h3>
     <p id="barcode-display" style="font-size: 26px; font-weight: 900; color: #4F46E5; margin: 10px 0; font-family: monospace;"></p>
-    <p style="color:#6B7280; font-size:14px; margin-bottom:20px; font-family:-apple-system, sans-serif;">Tippe auf den Button, um das Produkt direkt hier zu laden.</p>
-    
-    <button id="nav-btn" class="scan-btn" onclick="sendToStreamlit()">🔍 Produkt analysieren</button>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 let finalCode = "";
-
-// Diese Funktion zwingt Safari dazu, das Hauptfenster im gleichen Tab neu zu laden
-function sendToStreamlit() {
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set("scanned_barcode", finalCode);
-    window.parent.location.assign(url.href);
-}
 
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
@@ -662,11 +650,40 @@ function startScanner() {
         (decodedText) => {
             finalCode = decodedText.replace(/[^0-9]/g, '');
             
-            // Kamera ausschalten und Button-Menü einblenden
+            // Kamera ausschalten und Lade-Overlay anzeigen
             html5QrCode.stop().then(() => {
                 document.getElementById('reader-container').style.display = 'none';
                 document.getElementById('success-overlay').style.display = 'block';
                 document.getElementById('barcode-display').innerText = finalCode;
+                
+                // NAHTLOSE ÜBERGABE AN STREAMLIT (OHNE RELOAD)
+                const parentDoc = window.parent.document;
+                
+                // Suche das von Streamlit generierte Textfeld (Label wurde in Python definiert)
+                const stInputs = parentDoc.querySelectorAll('input[type="text"]');
+                let targetInput = null;
+                stInputs.forEach(input => {
+                    if (input.getAttribute('aria-label') === 'Barcode Entry') {
+                        targetInput = input;
+                    }
+                });
+
+                if (targetInput) {
+                    // React Event-Trigger Hack, damit Streamlit die Änderung bemerkt
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    nativeInputValueSetter.call(targetInput, finalCode);
+                    
+                    // Input-Event feuern
+                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // Enter-Tastendruck simulieren, um die Analyse sofort zu starten!
+                    targetInput.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, keyCode: 13, key: 'Enter' }));
+                } else {
+                    // Fallback (falls das Feld wider Erwarten nicht gefunden wird)
+                    const url = new URL(window.parent.location.href);
+                    url.searchParams.set("scanned_barcode", finalCode);
+                    window.parent.location.assign(url.href);
+                }
             });
         },
         (errorMessage) => { /* Wird bei jedem Frame ohne Code ignoriert */ }
