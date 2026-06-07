@@ -2,14 +2,16 @@ import streamlit as st
 import requests
 import streamlit.components.v1 as components
 
+# WICHTIG: set_page_config MUSS der allererste Streamlit-Befehl sein, sonst gibt es den White Screen!
+st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
+
+# Barcode abfangen und verarbeiten OHNE abzustürzen
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params["scanned_barcode"]
     if scanned:
         st.session_state.manual_code = scanned
-        st.query_params.clear()
-        st.rerun()
-
-st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
+        st.session_state.cam_on = False  # Kamera sofort sicher abschalten
+        del st.query_params["scanned_barcode"]  # Sauber aus der URL entfernen ohne rerun
 
 st.markdown("""
     <style>
@@ -383,7 +385,6 @@ with tab_scanner:
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
     
-    // Konfiguration auf klassische Barcodes anpassen
     const config = { 
         fps: 15,
         qrbox: { width: 250, height: 150 },
@@ -400,22 +401,19 @@ function startScanner() {
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            // Kamera sauber stoppen, um Ressourcen freizugeben
             html5QrCode.stop().then(() => {
                 document.getElementById("success-overlay").style.display = "flex";
                 document.querySelector(".scanner-laser").style.display = "none";
                 setTimeout(() => {
-                    // window.parent nutzen, damit die Streamlit-App (nicht nur das iFrame) weiterleitet
-                    const url = new URL(window.parent.location.href);
-                    url.searchParams.set("scanned_barcode", decodedText);
-                    window.parent.location.href = url.href;
+                    // Sicherer Redirect, der nur den Suchparameter der App ändert
+                    window.parent.location.search = `?scanned_barcode=${encodeURIComponent(decodedText)}`;
                 }, 600);
             }).catch(err => {
-                console.error("Scanner konnte nicht gestoppt werden.", err);
+                console.error("Scanner Stop Error", err);
             });
         },
         (errorMessage) => {
-            // Wird ignoriert, da der Scanner kontinuierlich Fehler wirft, wenn kein Code im Bild ist
+            // Ignorieren während gescannt wird
         }
     ).catch(err => {
         alert("Kamera-Fehler: Bitte erlaube den Zugriff auf die Kamera. " + err);
