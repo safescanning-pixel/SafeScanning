@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import streamlit.components.v1 as components
+import os
 import time
 
 # ==========================================
@@ -8,102 +9,97 @@ import time
 # ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# URL-Parameter sofort zu Beginn verarbeiten, um Weiterleitungs-Schleifen zu vermeiden
-# Das funktioniert jetzt nahtlos im selben Tab, sodass alle Einstellungen erhalten bleiben!
-if "scanned_barcode" in st.query_params:
-    scanned = st.query_params.get("scanned_barcode")
-    if scanned:
-        st.session_state.manual_code = scanned
-        st.session_state.cam_on = False  
-        st.query_params.clear()  
+# ==========================================
+# 2. DER CUSTOM COMPONENT HACK (FÜR iPADOS)
+# ==========================================
+# Hier erstellen wir dynamisch eine eigene Streamlit Component. 
+# Dadurch kommuniziert der HTML5-Scanner direkt mit Python (ohne Neuladen der Seite!).
+COMPONENT_DIR = "scanner_component"
+if not os.path.exists(COMPONENT_DIR):
+    os.makedirs(COMPONENT_DIR)
+    
+with open(os.path.join(COMPONENT_DIR, "index.html"), "w", encoding="utf-8") as f:
+    f.write("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <script src="https://unpkg.com/html5-qrcode"></script>
+        <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
+        <style>
+            body { margin: 0; padding: 0; font-family: -apple-system, sans-serif; background: transparent; }
+            #reader { width: 100%; border-radius: 20px; overflow: hidden; background-color: #000; position: relative; }
+            #reader video { object-fit: cover !important; border-radius: 20px; }
+            .scanner-laser { position: absolute; left: 10%; width: 80%; height: 2px; background-color: #EF4444; box-shadow: 0 0 15px #EF4444; animation: scanning 2s infinite ease-in-out; z-index: 100; pointer-events: none; }
+            @keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
+            #success-msg { display: none; text-align: center; color: white; padding: 80px 20px; font-size: 24px; font-weight: bold; background: #10B981; border-radius: 20px; }
+        </style>
+    </head>
+    <body>
+        <div id="reader">
+            <div class="scanner-laser"></div>
+        </div>
+        <div id="success-msg">✅ Code erkannt! Lade Daten...</div>
+        <script>
+            let html5QrCode;
+            function onRender(event) {
+                if (!window.rendered) {
+                    window.rendered = true;
+                    Streamlit.setFrameHeight(380);
+                    html5QrCode = new Html5Qrcode("reader");
+                    
+                    html5QrCode.start(
+                        { facingMode: "environment" },
+                        { fps: 15, qrbox: { width: 280, height: 160 } },
+                        (decodedText) => {
+                            const cleanCode = decodedText.replace(/[^0-9]/g, '');
+                            html5QrCode.stop().then(() => {
+                                document.getElementById('reader').style.display = 'none';
+                                document.getElementById('success-msg').style.display = 'block';
+                                document.getElementById('success-msg').innerText = "✅ Erfasst: " + cleanCode + "\\n\\nLade Analyse...";
+                                
+                                // DER MAGISCHE BEFEHL: Sendet den Code direkt an Python, OHNE Reload!
+                                Streamlit.setComponentValue(cleanCode);
+                            });
+                        },
+                        (err) => {}
+                    ).catch(err => {
+                        document.getElementById('reader').innerHTML = "<p style='color:white; padding:20px;'>Kamerazugriff verweigert. Bitte im iPad/Browser erlauben.</p>";
+                    });
+                }
+            }
+            Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
+            Streamlit.setComponentReady();
+        </script>
+    </body>
+    </html>
+    """)
+
+# Komponente in Streamlit registrieren
+custom_scanner = components.declare_component("html5_scanner", path=COMPONENT_DIR)
 
 # ==========================================
-# 2. STYLING (CSS)
+# 3. STYLING (CSS)
 # ==========================================
 st.markdown("""
     <style>
-    .stApp { 
-        background-color: #F8F9FA; 
-        color: #111827; 
-        font-family: 'SF Pro Display', -apple-system, sans-serif; 
-    }
+    .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
     header {visibility: hidden;}
-    .stTabs [data-baseweb="tab-list"] { 
-        background-color: white; 
-        padding: 6px; 
-        border-radius: 24px; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02); 
-        gap: 8px; 
-        justify-content: center; 
-        margin-bottom: 25px; 
-    }
-    .stTabs [data-baseweb="tab"] { 
-        height: 46px; 
-        border-radius: 18px; 
-        color: #6B7280; 
-        font-weight: 600; 
-        font-size: 14px; 
-        padding: 0 20px; 
-        border: none !important; 
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #E0E7FF !important; 
-        color: #4F46E5 !important; 
-    }
-    div[data-testid="stVerticalBlock"] > div[style*="border"] { 
-        background-color: white !important; 
-        border-radius: 24px !important; 
-        border: 1px solid #F3F4F6 !important; 
-        box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; 
-        padding: 25px !important; 
-        margin-bottom: 15px; 
-    }
+    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 6px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); gap: 8px; justify-content: center; margin-bottom: 25px; }
+    .stTabs [data-baseweb="tab"] { height: 46px; border-radius: 18px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 20px; border: none !important; }
+    .stTabs [aria-selected="true"] { background-color: #E0E7FF !important; color: #4F46E5 !important; }
+    div[data-testid="stVerticalBlock"] > div[style*="border"] { background-color: white !important; border-radius: 24px !important; border: 1px solid #F3F4F6 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; padding: 25px !important; margin-bottom: 15px; }
     h1 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 32px; margin-bottom: 5px;}
     h2 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 26px; margin-bottom: 5px;}
     h3 { color: #111827 !important; text-align: left; font-weight: 700; font-size: 22px; margin-bottom: 10px;}
     h4 { color: #111827 !important; text-align: left; font-weight: 700; font-size: 16px; margin-bottom: 15px !important;}
     p {text-align: center; color: #6B7280; font-size: 15px; margin-bottom: 20px;}
-    .stButton>button { 
-        background-color: #4F46E5 !important; 
-        color: white !important; 
-        border-radius: 20px !important; 
-        height: 50px !important; 
-        width: 100% !important; 
-        font-weight: 700 !important; 
-        font-size: 15px !important; 
-        border: none !important; 
-        transition: all 0.2s ease; 
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important; 
-    }
-    .stButton>button:hover { 
-        background-color: #4338CA !important; 
-        transform: translateY(-1px); 
-    }
-    .result-box-safe { 
-        background-color: #ECFDF5; 
-        border: 4px solid #10B981; 
-        border-radius: 20px; 
-        padding: 20px; 
-        color: #065F46; 
-        box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); 
-    }
-    .result-box-warn { 
-        background-color: #FEF2F2; 
-        border: 4px solid #EF4444; 
-        border-radius: 20px; 
-        padding: 20px; 
-        color: #991B1B; 
-        box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); 
-    }
-    .nutri-badge { 
-        padding: 8px 16px; 
-        border-radius: 10px; 
-        font-weight: 800; 
-        color: white; 
-        display: inline-block; 
-        font-size: 18px; 
-        margin-top: 5px; 
-    }
+    .stButton>button { background-color: #4F46E5 !important; color: white !important; border-radius: 20px !important; height: 50px !important; width: 100% !important; font-weight: 700 !important; font-size: 15px !important; border: none !important; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important; }
+    .stButton>button:hover { background-color: #4338CA !important; transform: translateY(-1px); }
+    .btn-reset>button { background-color: #10B981 !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2) !important; margin-top: 10px;}
+    .btn-reset>button:hover { background-color: #059669 !important; }
+    .result-box-safe { background-color: #ECFDF5; border: 4px solid #10B981; border-radius: 20px; padding: 20px; color: #065F46; box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); }
+    .result-box-warn { background-color: #FEF2F2; border: 4px solid #EF4444; border-radius: 20px; padding: 20px; color: #991B1B; box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+    .nutri-badge { padding: 8px 16px; border-radius: 10px; font-weight: 800; color: white; display: inline-block; font-size: 18px; margin-top: 5px; }
     .nutri-a { background-color: #038141; }
     .nutri-b { background-color: #85BB2F; }
     .nutri-c { background-color: #FECB02; }
@@ -115,103 +111,46 @@ st.markdown("""
 
 def throw_confetti():
     components.html(
-        """
-        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-        <script>confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 }, colors: ['#4F46E5', '#10B981', '#F59E0B'] });</script>
-        """, height=0,
+        """<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        <script>confetti({ particleCount: 180, spread: 90, origin: { y: 0.6 }, colors: ['#4F46E5', '#10B981', '#F59E0B'] });</script>""", height=0
     )
 
 # ==========================================
-# 3. SESSION STATES (Bleiben jetzt erhalten!)
+# 4. SESSION STATES (100% PERSISTENT)
 # ==========================================
-if 'lang' not in st.session_state: 
-    st.session_state.lang = "Deutsch"
-if 'cam_on' not in st.session_state: 
-    st.session_state.cam_on = False
-if 'history' not in st.session_state: 
-    st.session_state.history = []
-if 'manual_code' not in st.session_state: 
-    st.session_state.manual_code = ""
+if 'lang' not in st.session_state: st.session_state.lang = "Deutsch"
+if 'cam_on' not in st.session_state: st.session_state.cam_on = False
+if 'history' not in st.session_state: st.session_state.history = []
+if 'manual_code' not in st.session_state: st.session_state.manual_code = ""
+if 'scanner_key' not in st.session_state: st.session_state.scanner_key = 0 # Wichtig für eleganten Reset
 if 'profile' not in st.session_state:
     st.session_state.profile = {
-        "laktose": False, 
-        "fruktose": False, 
-        "histamin": False, 
-        "sorbit": False, 
-        "sulfite": False, 
-        "glutamat": False,
-        "gluten": False, 
-        "nuesse": False, 
-        "soja": False, 
-        "erdnuesse": False, 
-        "vegan": False, 
-        "vegetarisch": False, 
-        "halal": False, 
-        "koscher": False
+        "laktose": False, "fruktose": False, "histamin": False, "sorbit": False, "sulfite": False, "glutamat": False,
+        "gluten": False, "nuesse": False, "soja": False, "erdnuesse": False, "vegan": False, "vegetarisch": False, "halal": False, "koscher": False
     }
 
 # ==========================================
-# 4. MULTILINGUALE DATENBANK (UI TEXTE)
+# 5. MULTILINGUALE DATENBANK (UI TEXTE)
 # ==========================================
 ui = {
     "Deutsch": {
-        "t1": "👤 Profil", 
-        "t2": "📸 Scanner", 
-        "t3": "⚙️ Einstellungen", 
-        "t4": "ℹ️ Info",
-        "title": "Mein Schutzprofil", 
-        "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", 
-        "save": "Profil speichern",
-        "cat_allergy": "Intoleranzen & Allergien", 
-        "cat_additives": "Zusatzstoffe", 
-        "cat_lifestyle": "Lebensstil & Religion",
-        "laktose": "Laktose / Milch", 
-        "fruktose": "Fruktose", 
-        "histamin": "Histamin", 
-        "sorbit": "Sorbit",
-        "gluten": "Gluten / Zöliakie", 
-        "nuesse": "Schalenfrüchte / Nüsse", 
-        "soja": "Soja", 
-        "erdnuesse": "Erdnüsse",
-        "sulfite": "Sulfite", 
-        "glutamat": "Glutamat", 
-        "vegan": "Vegan", 
-        "vegetarisch": "Vegetarisch", 
-        "halal": "Halal (حلال)", 
-        "koscher": "Koscher (כָּשֵׁר)",
-        "scan_h": "Scanner", 
-        "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
-        "btn_cam_start": "📸 Scanner starten", 
-        "btn_cam_stop": "🛑 Scanner stoppen",
-        "safe": "✅ PRODUKT GEEIGNET!", 
-        "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
-        "warn": "🛑 NICHT GEEIGNET!", 
-        "not_found": "⚠️ Produkt nicht in der Datenbank gefunden.", 
-        "lang_select": "Wähle deine Sprache:", 
-        "saved_msg": "✅ Profil erfolgreich gespeichert!", 
-        "team_title": "👥 Entwickler-Team Klasse 10a",
-        "w_laktose": "🥛 Enthält Laktose/Milch", 
-        "w_fruktose": "🍎 Enthält Fruktose", 
-        "w_histamin": "🍷 Histamin-Risiko erkannt", 
-        "w_sorbit": "🍬 Enthält Sorbit (E420)",
-        "w_sulfite": "🧪 Enthält Sulfite (Schwefeldioxid)", 
-        "w_glutamat": "🍕 Enthält Glutamat", 
-        "w_gluten": "🌾 Enthält Gluten", 
-        "w_nuesse": "🌰 Enthält Schalenfrüchte/Nüsse", 
-        "w_soja": "🌱 Enthält Soja", 
-        "w_erdnuesse": "🥜 Enthält Erdnüsse",
-        "w_vegan": "🥩 Nicht Vegan", 
-        "w_vegetarisch": "🥩 Nicht Vegetarisch", 
-        "w_halal": "☪️ Nicht Halal-Konform", 
-        "w_koscher": "✡️ Nicht Koscher-Konform",
-        "placeholder": "Barcode eintippen...", 
-        "hist_title": "🕒 Letzte Scans", 
-        "details": "🔬 Inhaltsstoffe & Analyse",
-        "nutri_title": "🥗 Nährwert-Qualität", 
-        "cal_title": "🔥 Kalorien-Check", 
-        "cal_slider": "Dein täglicher Kalorien-Richtwert (kcal):",
-        "cal_percentage": "Dieses Produkt verbraucht **{:.1f}%** deines Tagesbedarfs pro 100g.", 
-        "de_ingredients": "🇩🇪 Deutsche Zutatenliste (Übersetzt):"
+        "t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "t4": "ℹ️ Info",
+        "title": "Mein Schutzprofil", "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", "save": "Profil speichern",
+        "cat_allergy": "Intoleranzen & Allergien", "cat_additives": "Zusatzstoffe", "cat_lifestyle": "Lebensstil & Religion",
+        "laktose": "Laktose / Milch", "fruktose": "Fruktose", "histamin": "Histamin", "sorbit": "Sorbit",
+        "gluten": "Gluten / Zöliakie", "nuesse": "Schalenfrüchte / Nüsse", "soja": "Soja", "erdnuesse": "Erdnüsse",
+        "sulfite": "Sulfite", "glutamat": "Glutamat", "vegan": "Vegan", "vegetarisch": "Vegetarisch", "halal": "Halal (حلال)", "koscher": "Koscher (כָּشֵׁר)",
+        "scan_h": "Live-Scanner", "scan_p": "Richte die Kamera auf den Barcode. Die Analyse startet automatisch.",
+        "btn_cam_start": "📸 Kamera aktivieren", "btn_cam_stop": "🛑 Kamera schließen", "btn_reset": "🔄 Neuen Code scannen",
+        "safe": "✅ PRODUKT GEEIGNET!", "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
+        "warn": "🛑 NICHT GEEIGNET!", "not_found": "⚠️ Produkt nicht in der Datenbank gefunden.", 
+        "lang_select": "Wähle deine Sprache:", "saved_msg": "✅ Profil erfolgreich gespeichert!", "team_title": "👥 Entwickler-Team Klasse 10a",
+        "w_laktose": "🥛 Enthält Laktose/Milch", "w_fruktose": "🍎 Enthält Fruktose", "w_histamin": "🍷 Histamin-Risiko erkannt", "w_sorbit": "🍬 Enthält Sorbit (E420)",
+        "w_sulfite": "🧪 Enthält Sulfite (Schwefeldioxid)", "w_glutamat": "🍕 Enthält Glutamat", "w_gluten": "🌾 Enthält Gluten", "w_nuesse": "🌰 Enthält Schalenfrüchte/Nüsse", "w_soja": "🌱 Enthält Soja", "w_erdnuesse": "🥜 Enthält Erdnüsse",
+        "w_vegan": "🥩 Nicht Vegan", "w_vegetarisch": "🥩 Nicht Vegetarisch", "w_halal": "☪️ Nicht Halal-Konform", "w_koscher": "✡️ Nicht Koscher-Konform",
+        "placeholder": "Barcode manuell eintippen...", "hist_title": "🕒 Letzte Scans", "details": "🔬 Inhaltsstoffe & Analyse",
+        "nutri_title": "🥗 Nährwert-Qualität", "cal_title": "🔥 Kalorien-Check", "cal_slider": "Dein täglicher Kalorien-Richtwert (kcal):",
+        "cal_percentage": "Dieses Produkt verbraucht **{:.1f}%** deines Tagesbedarfs pro 100g.", "de_ingredients": "🇩🇪 Deutsche Zutatenliste (Übersetzt):"
     },
     "English": {
         "t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "t4": "ℹ️ Info",
@@ -220,8 +159,8 @@ ui = {
         "laktose": "Lactose / Milk", "fruktose": "Fructose", "histamin": "Histamine", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Tree Nuts", "soja": "Soy", "erdnuesse": "Peanuts",
         "sulfite": "Sulfites", "glutamat": "Glutamate", "vegan": "Vegan", "vegetarisch": "Vegetarian", "halal": "Halal", "koscher": "Kosher",
-        "scan_h": "Scanner", "scan_p": "Use the camera or enter the code manually",
-        "btn_cam_start": "📸 Start Scanner", "btn_cam_stop": "🛑 Stop Scanner",
+        "scan_h": "Live Scanner", "scan_p": "Point the camera at the barcode. Analysis starts automatically.",
+        "btn_cam_start": "📸 Start Camera", "btn_cam_stop": "🛑 Stop Camera", "btn_reset": "🔄 Scan New Product",
         "safe": "✅ PRODUCT SAFE!", "safe_sub": "Matches your profile perfectly.",
         "warn": "🛑 NOT COMPATIBLE!", "not_found": "⚠️ Product not found.", 
         "lang_select": "Choose language:", "saved_msg": "✅ Profile saved!", "team_title": "👥 Team Class 10a",
@@ -239,8 +178,8 @@ ui = {
         "laktose": "乳糖 / ミルク", "fruktose": "果糖", "histamin": "ヒスタミン", "sorbit": "ソルビトール",
         "gluten": "グルテン", "nuesse": "ナッツ類", "soja": "大豆", "erdnuesse": "ピーナッツ",
         "sulfite": "亜硫酸塩", "glutamat": "グルタミン酸", "vegan": "ヴィーガン", "vegetarisch": "ベジタリアン", "halal": "ハラール", "koscher": "コーシャ",
-        "scan_h": "スキャナー", "scan_p": "カメラか手動でバーコードを入力してください",
-        "btn_cam_start": "📸 スキャナーを起動", "btn_cam_stop": "🛑 スキャナーを停止",
+        "scan_h": "ライブスキャナー", "scan_p": "カメラをバーコードに向けると自動で解析します。",
+        "btn_cam_start": "📸 カメラを起動", "btn_cam_stop": "🛑 カメラを停止", "btn_reset": "🔄 新しくスキャンする",
         "safe": "✅ 安全な製品です！", "safe_sub": "プロファイルに完全に一致しています。",
         "warn": "🛑 適合しません！", "not_found": "⚠️ 製品が見つかりません。", 
         "lang_select": "言語を選択:", "saved_msg": "✅ 保存されました！", "team_title": "👥 開発チーム",
@@ -258,8 +197,8 @@ ui = {
         "laktose": "اللاكتوز / الحليب", "fruktose": "الفركتوز", "histamin": "الهيستامين", "sorbit": "السوربيتول",
         "gluten": "الغلوتين", "nuesse": "المكسرات", "soja": "الصويا", "erdnuesse": "الفول السوداني",
         "sulfite": "الكبريتيت", "glutamat": "الغلوتامات", "vegan": "نباتي تام", "vegetarisch": "نباتي", "halal": "حلال", "koscher": "كوشير",
-        "scan_h": "الماسح الضوئي", "scan_p": "استخدم الكاميرا أو أدخل الرمز يدويًا",
-        "btn_cam_start": "📸 تشغيل الماسح", "btn_cam_stop": "🛑 إيقاف الماسح",
+        "scan_h": "الماسح المباشر", "scan_p": "وجه الكاميرا نحو الباركود. سيبدأ التحليل تلقائياً.",
+        "btn_cam_start": "📸 تشغيل الكاميرا", "btn_cam_stop": "🛑 إيقاف الكاميرا", "btn_reset": "🔄 مسح منتج جديد",
         "safe": "✅ المنتج آمن ومناسب!", "safe_sub": "هذا المنتج يطابق ملفك الشخصي تمامًا.",
         "warn": "🛑 غير مناسب!", "not_found": "⚠️ لم يتم العثور على المنتج.",
         "lang_select": "اختر اللغة:", "saved_msg": "✅ تم الحفظ!", "team_title": "👥 فريق التطوير",
@@ -277,8 +216,8 @@ ui = {
         "laktose": "乳糖 / 牛奶", "fruktose": "果糖", "histamin": "组胺", "sorbit": "山梨糖醇",
         "gluten": "麸质", "nuesse": "坚果", "soja": "大豆", "erdnuesse": "花生",
         "sulfite": "亚硫酸盐", "glutamat": "谷氨酸钠", "vegan": "纯素食", "vegetarisch": "蛋奶素食", "halal": "清真", "koscher": "犹太洁食",
-        "scan_h": "扫描仪", "scan_p": "使用摄像头或手动输入条形码",
-        "btn_cam_start": "📸 开启扫描", "btn_cam_stop": "🛑 关闭扫描",
+        "scan_h": "实时扫描仪", "scan_p": "将摄像头对准条形码。分析将自动开始。",
+        "btn_cam_start": "📸 开启摄像头", "btn_cam_stop": "🛑 关闭摄像头", "btn_reset": "🔄 扫描新产品",
         "safe": "✅ 产品安全！", "safe_sub": "该产品完全符合您的安全配置。",
         "warn": "🛑 不适用！", "not_found": "⚠️ 未找到该产品。",
         "lang_select": "选择语言:", "saved_msg": "✅ 保存成功！", "team_title": "👥 开发团队",
@@ -296,8 +235,8 @@ ui = {
         "laktose": "Лактоза / Молоко", "fruktose": "Фруктоза", "histamin": "Гистамин", "sorbit": "Сорбит",
         "gluten": "Глютен", "nuesse": "Орехи", "soja": "Соя", "erdnuesse": "Арахис",
         "sulfite": "Сульфиты", "glutamat": "Глутамат", "vegan": "Веган", "vegetarisch": "Вегетарианец", "halal": "Халяль", "koscher": "Кошерно",
-        "scan_h": "Сканер", "scan_p": "Используйте камеру или введите штрихкод",
-        "btn_cam_start": "📸 Запустить сканер", "btn_cam_stop": "🛑 Остановить сканер",
+        "scan_h": "Live-Сканер", "scan_p": "Наведите камеру. Анализ начнется автоматически.",
+        "btn_cam_start": "📸 Включить камеру", "btn_cam_stop": "🛑 Выключить", "btn_reset": "🔄 Новый скан",
         "safe": "✅ ПРОДУКТ БЕЗОПАСЕН!", "safe_sub": "Полностью соответствует профилю.",
         "warn": "🛑 НЕ ПОДХОДИТ!", "not_found": "⚠️ Продукт не найден.",
         "lang_select": "Выберите язык:", "saved_msg": "✅ Профиль сохранен!", "team_title": "👥 Разработчики",
@@ -315,8 +254,8 @@ ui = {
         "laktose": "Laktoza / Mleko", "fruktose": "Fruktoza", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Orzechy", "soja": "Soja", "erdnuesse": "Orzeszki ziemne",
         "sulfite": "Siarczyny", "glutamat": "Glutaminian", "vegan": "Weganin", "vegetarisch": "Wegetarianin", "halal": "Halal", "koscher": "Koszerny",
-        "scan_h": "Skaner", "scan_p": "Użyj aparatu",
-        "btn_cam_start": "📸 Uruchom skaner", "btn_cam_stop": "🛑 Zatrzymaj",
+        "scan_h": "Skaner", "scan_p": "Skieruj aparat na kod. Analiza uruchomi się automatycznie.",
+        "btn_cam_start": "📸 Uruchom aparat", "btn_cam_stop": "🛑 Zatrzymaj", "btn_reset": "🔄 Nowy skan",
         "safe": "✅ BEZPIECZNY!", "safe_sub": "Produkt zgodny z profilem.",
         "warn": "🛑 NIEODPOWIEDNI!", "not_found": "⚠️ Nie znaleziono produktu.",
         "lang_select": "Wybierz język:", "saved_msg": "✅ Zapisano!", "team_title": "👥 Zespół",
@@ -334,8 +273,8 @@ ui = {
         "laktose": "Lactose / Lait", "fruktose": "Fructose", "histamin": "Histamine", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Fruits à coque", "soja": "Soja", "erdnuesse": "Arachides",
         "sulfite": "Sulfites", "glutamat": "Glutamate", "vegan": "Végétalien", "vegetarisch": "Végétarien", "halal": "Halal", "koscher": "Cascher",
-        "scan_h": "Scanner", "scan_p": "Utilisez l'appareil photo",
-        "btn_cam_start": "📸 Activer le scanner", "btn_cam_stop": "🛑 Arrêter",
+        "scan_h": "Scanner", "scan_p": "Pointez la caméra. L'analyse démarre automatiquement.",
+        "btn_cam_start": "📸 Activer la caméra", "btn_cam_stop": "🛑 Arrêter", "btn_reset": "🔄 Scanner un autre produit",
         "safe": "✅ SÛR !", "safe_sub": "Correspond à votre profil.",
         "warn": "🛑 NON COMPATIBLE !", "not_found": "⚠️ Produit non trouvé.",
         "lang_select": "Langue :", "saved_msg": "✅ Enregistré !", "team_title": "👥 Équipe",
@@ -353,8 +292,8 @@ ui = {
         "laktose": "Lactosa / Leche", "fruktose": "Fructosa", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Gluten", "nuesse": "Frutos secos", "soja": "Soja", "erdnuesse": "Cacahuetes",
         "sulfite": "Sulfitos", "glutamat": "Glutamato", "vegan": "Vegano", "vegetarisch": "Vegetariano", "halal": "Halal", "koscher": "Kosher",
-        "scan_h": "Escáner", "scan_p": "Usa la cámara",
-        "btn_cam_start": "📸 Iniciar Escáner", "btn_cam_stop": "🛑 Detener",
+        "scan_h": "Escáner en vivo", "scan_p": "Apunta la cámara al código. El análisis es automático.",
+        "btn_cam_start": "📸 Iniciar cámara", "btn_cam_stop": "🛑 Detener", "btn_reset": "🔄 Nuevo escaneo",
         "safe": "✅ ¡APTO!", "safe_sub": "Cumple con tu perfil.",
         "warn": "🛑 ¡NO COMPATIBLE!", "not_found": "⚠️ Producto no encontrado.",
         "lang_select": "Idioma:", "saved_msg": "✅ ¡Guardado!", "team_title": "👥 Equipo",
@@ -372,8 +311,8 @@ ui = {
         "laktose": "Lactose / Leite", "fruktose": "Frutose", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Glúten", "nuesse": "Nozes", "soja": "Soja", "erdnuesse": "Amendoins",
         "sulfite": "Sulfitos", "glutamat": "Glutamato", "vegan": "Vegano", "vegetarisch": "Vegetariano", "halal": "Halal", "koscher": "Kosher",
-        "scan_h": "Scanner", "scan_p": "Use a câmara",
-        "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "🛑 Parar",
+        "scan_h": "Scanner", "scan_p": "Aponte a câmera. A análise inicia automaticamente.",
+        "btn_cam_start": "📸 Iniciar câmera", "btn_cam_stop": "🛑 Parar", "btn_reset": "🔄 Novo scan",
         "safe": "✅ SEGURO!", "safe_sub": "Conformidade com o perfil.",
         "warn": "🛑 NÃO COMPATÍVEL!", "not_found": "⚠️ Produto não encontrado.",
         "lang_select": "Idioma:", "saved_msg": "✅ Salvo com sucesso!", "team_title": "👥 Equipa",
@@ -391,8 +330,8 @@ ui = {
         "laktose": "แลคโตส / นม", "fruktose": "ฟรุกโตส", "histamin": "ฮิสตามีน", "sorbit": "ซอร์บิทอล",
         "gluten": "กลูเตน", "nuesse": "ถั่ว", "soja": "ถั่วเหลือง", "erdnuesse": "ถั่วลิสง",
         "sulfite": "ซัลไฟต์", "glutamat": "ผงชูรส", "vegan": "วีแกน", "vegetarisch": "มังสวิรัติ", "halal": "ฮาลาล", "koscher": "โคเชอร์",
-        "scan_h": "เครื่องสแกน", "scan_p": "ใช้กล้อง",
-        "btn_cam_start": "📸 เริ่มสแกน", "btn_cam_stop": "🛑 หยุด",
+        "scan_h": "เครื่องสแกน", "scan_p": "เล็งกล้องไปที่บาร์โค้ด การวิเคราะห์จะเริ่มอัตโนมัติ",
+        "btn_cam_start": "📸 เปิดกล้อง", "btn_cam_stop": "🛑 ปิดกล้อง", "btn_reset": "🔄 สแกนใหม่",
         "safe": "✅ ปลอดภัย!", "safe_sub": "ตรงกับโปรไฟล์ของคุณ",
         "warn": "🛑 ไม่ปลอดภัย!", "not_found": "⚠️ ไม่พบสินค้า",
         "lang_select": "เลือกภาษา:", "saved_msg": "✅ บันทึกสำเร็จ!", "team_title": "👥 ทีมพัฒนา",
@@ -410,8 +349,8 @@ ui = {
         "laktose": "유당 / 우유", "fruktose": "과당", "histamin": "히스타민", "sorbit": "소르비톨",
         "gluten": "글루텐", "nuesse": "견과류", "soja": "대두", "erdnuesse": "땅콩",
         "sulfite": "아황산염", "glutamat": "글루타민산염", "vegan": "비건", "vegetarisch": "채식주의자", "halal": "할랄", "koscher": "코셔",
-        "scan_h": "스캐너", "scan_p": "카메라를 사용하세요",
-        "btn_cam_start": "📸 스캐너 시작", "btn_cam_stop": "🛑 중지",
+        "scan_h": "실시간 스캐너", "scan_p": "카메라를 바코드에 맞추면 분석이 자동 시작됩니다.",
+        "btn_cam_start": "📸 카메라 켜기", "btn_cam_stop": "🛑 끄기", "btn_reset": "🔄 새로 스캔하기",
         "safe": "✅ 안전!", "safe_sub": "프로필과 일치합니다.",
         "warn": "🛑 적합하지 않음!", "not_found": "⚠️ 제품 없음.",
         "lang_select": "언어:", "saved_msg": "✅ 저장됨!", "team_title": "👥 개발 팀",
@@ -427,7 +366,7 @@ ui = {
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
 # ==========================================
-# 5. ÜBERSETZUNGS-ENGINE (ENG -> DEUTSCH)
+# 6. ÜBERSETZUNGS-ENGINE (ENG -> DEUTSCH)
 # ==========================================
 INGREDIENTS_DICT = {
     "sugar": "Zucker", "palm oil": "Palmöl", "hazelnuts": "Haselnüsse", "skimmed milk powder": "Magermilchpulver",
@@ -471,90 +410,43 @@ def translate_ingredients_to_de(text):
     return text_lower.capitalize()
 
 # ==========================================
-# 6. ERWEITERTE OFFLINE DATENBANK (PRÄSENTATIONS-BACKUP)
+# 7. EXTREM ERWEITERTE OFFLINE DATENBANK
 # ==========================================
 OFFLINE_DATA = {
     "3017620425035": {
-        "product_name": "Nutella", 
-        "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 539, "carbohydrates_100g": 56.3, "fat_100g": 30.9, "proteins_100g": 6.3}
+        "product_name": "Nutella", "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 539, "carbohydrates_100g": 56.3, "fat_100g": 30.9, "proteins_100g": 6.3}
     },
     "5449000000996": {
-        "product_name": "Coca Cola Classic", 
-        "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 42, "carbohydrates_100g": 10.6, "fat_100g": 0, "proteins_100g": 0}
+        "product_name": "Coca Cola Classic", "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 42, "carbohydrates_100g": 10.6, "fat_100g": 0, "proteins_100g": 0}
     },
-    "40335711": {
-        "product_name": "Ahoj-Brause Pulver", 
-        "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure, Natriumhydrogencarbonat, Natriumcyclamat, Acesulfam-K, Saccharin-Natrium, Aromen, Karotine.", 
-        "image_front_url": "",
-        "nutriscore_grade": "d",
-        "nutriments": {"energy-kcal_100g": 328, "carbohydrates_100g": 67, "fat_100g": 0, "proteins_100g": 0}
-    },
-    "4002234027733": {
-        "product_name": "Knoppers", 
-        "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Magermilchpulver, Weizenmehl, Haselnüsse, Vollkornweizenmehl, Kakao, Butterreinfett, Magerkakao, Weizenstärke, Emulgator Lecithine (Soja), Molkenerzeugnis.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 551, "carbohydrates_100g": 52.4, "fat_100g": 34.2, "proteins_100g": 8.8}
-    },
-    "4008400401829": {
-        "product_name": "Kinder Bueno", 
-        "ingredients_text": "Milchschokolade 31,5% (Zucker, Kakaobutter, Kakaomasse, Magermilchpulver, Butterreinfett, Emulgator Lecithine (Soja), Vanillin), Zucker, Palmöl, Weizenmehl, Haselnüsse (10,8%), Magermilchpulver.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 572, "carbohydrates_100g": 49.5, "fat_100g": 37.3, "proteins_100g": 8.6}
-    },
-    "4011100062402": {
-        "product_name": "Pringles Original", 
-        "ingredients_text": "Kartoffelpüree-Pulver, pflanzliche Öle (Sonnenblume, Mais), Reismehl, Weizenstärke, Maismehl, Emulgator (E471), Maltodextrin, Salz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "d",
-        "nutriments": {"energy-kcal_100g": 522, "carbohydrates_100g": 51, "fat_100g": 33, "proteins_100g": 4.0}
-    },
-    "4100060045431": {
-        "product_name": "Alnatura Haferdrink Ungezuckert", 
-        "ingredients_text": "Wasser, Vollkornhafer (11%), Sonnenblumenöl, Meersalz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "b",
-        "nutriments": {"energy-kcal_100g": 41, "carbohydrates_100g": 6.8, "fat_100g": 1.1, "proteins_100g": 0.5}
+    "9002490100070": {
+        "product_name": "Red Bull Energy Drink", "ingredients_text": "Wasser, Saccharose, Glucose, Säuerungsmittel (Citronensäure), Kohlensäure, Taurin (0,4%), Säureregulator (Natriumcarbonate, Magnesiumcarbonate), Koffein (0,03%), Vitamine (Niacin, Pantothensäure, B6, B12), Aromen, Farbstoffe.", "image_front_url": "", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 46, "carbohydrates_100g": 11, "fat_100g": 0, "proteins_100g": 0}
     },
     "7622210449283": {
-        "product_name": "Milka Alpenmilch Schokolade", 
-        "ingredients_text": "Zucker, Kakaobutter, Magermilchpulver, Kakaomasse, Süßmolkenpulver (aus Milch), Butterreinfett, Haselnussmasse, Emulgator (Sojalecithine), Aroma.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 530, "carbohydrates_100g": 59, "fat_100g": 29, "proteins_100g": 6.3}
+        "product_name": "Milka Alpenmilch Schokolade", "ingredients_text": "Zucker, Kakaobutter, Magermilchpulver, Kakaomasse, Süßmolkenpulver (aus Milch), Butterreinfett, Haselnussmasse, Emulgator (Sojalecithine), Aroma.", "image_front_url": "", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 530, "carbohydrates_100g": 59, "fat_100g": 29, "proteins_100g": 6.3}
     },
     "4009300010189": {
-        "product_name": "Haribo Goldbären", 
-        "ingredients_text": "Glukosesirup, Zucker, Gelatine, Dextrose, Fruchtsaft aus Fruchtsaftkonzentrat, Säuerungsmittel: Citronensäure, Frucht- und Pflanzenkonzentrate.", 
-        "image_front_url": "",
-        "nutriscore_grade": "c",
-        "nutriments": {"energy-kcal_100g": 343, "carbohydrates_100g": 77, "fat_100g": 0.1, "proteins_100g": 6.9}
+        "product_name": "Haribo Goldbären", "ingredients_text": "Glukosesirup, Zucker, Gelatine, Dextrose, Fruchtsaft aus Fruchtsaftkonzentrat, Säuerungsmittel: Citronensäure, Frucht- und Pflanzenkonzentrate.", "image_front_url": "", "nutriscore_grade": "c", "nutriments": {"energy-kcal_100g": 343, "carbohydrates_100g": 77, "fat_100g": 0.1, "proteins_100g": 6.9}
     },
-    "4251232200204": {
-        "product_name": "Yfood This is Food Classic Choco", 
-        "ingredients_text": "Fettarme Milch, Wasser, Milcheiweiß, pflanzliche Öle (Raps, Sonnenblume), Kokosnussmilch, glutenfreie Haferfaser, lösliche Maisfaser, Reispulver.", 
-        "image_front_url": "",
-        "nutriscore_grade": "a",
-        "nutriments": {"energy-kcal_100g": 100, "carbohydrates_100g": 7.8, "fat_100g": 4.8, "proteins_100g": 6.8}
+    "40335711": {
+        "product_name": "Ahoj-Brause Pulver", "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure, Natriumhydrogencarbonat, Natriumcyclamat, Acesulfam-K, Saccharin-Natrium, Aromen, Karotine.", "image_front_url": "", "nutriscore_grade": "d", "nutriments": {"energy-kcal_100g": 328, "carbohydrates_100g": 67, "fat_100g": 0, "proteins_100g": 0}
+    },
+    "4002234027733": {
+        "product_name": "Knoppers", "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Magermilchpulver, Weizenmehl, Haselnüsse, Vollkornweizenmehl, Kakao, Butterreinfett, Magerkakao, Weizenstärke, Emulgator Lecithine (Soja), Molkenerzeugnis.", "image_front_url": "", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 551, "carbohydrates_100g": 52.4, "fat_100g": 34.2, "proteins_100g": 8.8}
+    },
+    "4008400401829": {
+        "product_name": "Kinder Bueno", "ingredients_text": "Milchschokolade 31,5% (Zucker, Kakaobutter, Kakaomasse, Magermilchpulver, Butterreinfett, Emulgator Lecithine (Soja), Vanillin), Zucker, Palmöl, Weizenmehl, Haselnüsse (10,8%), Magermilchpulver.", "image_front_url": "", "nutriscore_grade": "e", "nutriments": {"energy-kcal_100g": 572, "carbohydrates_100g": 49.5, "fat_100g": 37.3, "proteins_100g": 8.6}
+    },
+    "4011100062402": {
+        "product_name": "Pringles Original", "ingredients_text": "Kartoffelpüree-Pulver, pflanzliche Öle (Sonnenblume, Mais), Reismehl, Weizenstärke, Maismehl, Emulgator (E471), Maltodextrin, Salz.", "image_front_url": "", "nutriscore_grade": "d", "nutriments": {"energy-kcal_100g": 522, "carbohydrates_100g": 51, "fat_100g": 33, "proteins_100g": 4.0}
     },
     "4006544418208": {
-        "product_name": "Test Bio Haferdrink", 
-        "ingredients_text": "Wasser, Vollkornhafer (12%), Sonnenblumenöl, Meersalz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "a",
-        "nutriments": {"energy-kcal_100g": 45, "carbohydrates_100g": 6.5, "fat_100g": 1.5, "proteins_100g": 1.0}
+        "product_name": "Test Bio Haferdrink", "ingredients_text": "Wasser, Vollkornhafer (12%), Sonnenblumenöl, Meersalz.", "image_front_url": "", "nutriscore_grade": "a", "nutriments": {"energy-kcal_100g": 45, "carbohydrates_100g": 6.5, "fat_100g": 1.5, "proteins_100g": 1.0}
     }
 }
 
 # ==========================================
-# 7. TAB-LAYOUT DER BENUTZEROBERFLÄCHE
+# 8. TAB-LAYOUT DER BENUTZEROBERFLÄCHE
 # ==========================================
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
@@ -589,6 +481,12 @@ with tab_profil:
     if st.button(f"💾 {t['save']}"):
         st.success(t["saved_msg"])
 
+# --- ELEGANTE RESET-FUNKTION FÜR NEUEN SCAN ---
+def reset_scanner_view():
+    st.session_state.manual_code = ""
+    st.session_state.cam_on = False
+    st.session_state.scanner_key += 1 # Erzwingt einen komplett frischen iFrame-Render
+
 # --- TAB 2: LIVE-SCANNER & AUSWERTUNG ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
@@ -598,91 +496,15 @@ with tab_scanner:
         st.markdown(f"<h5>{t['cal_title']}</h5>", unsafe_allow_html=True)
         daily_cal_budget = st.slider(t["cal_slider"], min_value=1200, max_value=4000, value=2000, step=50)
 
-    barcode_input = st.text_input("Barcode Entry", value=st.session_state.manual_code, placeholder=t["placeholder"], label_visibility="collapsed")
-    
-    if not barcode_input:
-        if not st.session_state.cam_on:
-            if st.button(t["btn_cam_start"]):
-                st.session_state.cam_on = True
-                st.rerun()
-        else:
-            if st.button(t["btn_cam_stop"]):
-                st.session_state.cam_on = False
-                st.rerun()
-            
-            # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - SAME TAB FIX (Session State bleibt!)
-            # -------------------------------------------------------------
-            with st.container(border=True):
-                components.html("""
-<style>
-#reader { width: 100%; border-radius: 20px; overflow: hidden; position: relative; background-color: #000; }
-#reader video { object-fit: cover !important; border-radius: 20px; }
-.scanner-laser { position: absolute; left: 10%; width: 80%; height: 2px; background-color: #EF4444; box-shadow: 0 0 10px #EF4444; animation: scanning 2s infinite ease-in-out; z-index: 100; pointer-events: none; }
-@keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
-#success-overlay { display: none; text-align: center; padding: 30px 15px; background: #E0E7FF; border-radius: 20px; margin-top: 10px; animation: fadeIn 0.3s ease-in; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.scan-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background-color: #4F46E5; color: white !important; border: none; cursor: pointer; border-radius: 12px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(79,70,229,0.3); font-family: -apple-system, sans-serif; transition: background 0.2s; }
-.scan-btn:hover { background-color: #4338CA; }
-</style>
-
-<div id="reader-container">
-    <div id="reader" style="position: relative;">
-        <div class="scanner-laser"></div>
-    </div>
-</div>
-
-<div id="success-overlay">
-    <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
-    <h3 style="color:#111827; margin:0; font-family:-apple-system, sans-serif;">CODE ERKANNT</h3>
-    <p id="barcode-display" style="font-size: 26px; font-weight: 900; color: #4F46E5; margin: 10px 0; font-family: monospace;"></p>
-    <p style="color:#6B7280; font-size:14px; margin-bottom:20px; font-family:-apple-system, sans-serif;">Tippe auf den Button, um das Produkt direkt hier zu laden.</p>
-    
-    <button id="nav-btn" class="scan-btn" onclick="sendToStreamlit()">🔍 Produkt analysieren</button>
-</div>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-let finalCode = "";
-
-// Diese Funktion zwingt Safari dazu, das Hauptfenster im gleichen Tab neu zu laden
-function sendToStreamlit() {
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set("scanned_barcode", finalCode);
-    window.parent.location.assign(url.href);
-}
-
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 15, qrbox: { width: 280, height: 160 } };
-
-    html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-            finalCode = decodedText.replace(/[^0-9]/g, '');
-            
-            // Kamera ausschalten und Button-Menü einblenden
-            html5QrCode.stop().then(() => {
-                document.getElementById('reader-container').style.display = 'none';
-                document.getElementById('success-overlay').style.display = 'block';
-                document.getElementById('barcode-display').innerText = finalCode;
-            });
-        },
-        (errorMessage) => { /* Wird bei jedem Frame ohne Code ignoriert */ }
-    ).catch(err => {
-        document.getElementById('reader').innerHTML = "<p style='color:white; padding:20px;'>Kamerazugriff verweigert oder nicht verfügbar. Bitte im Browser erlauben.</p>";
-    });
-}
-setTimeout(startScanner, 400);
-</script>
-""", height=380)
-    else:
-        st.session_state.cam_on = False
-
-    # VERARBEITUNG UND ALGORITHMUS NACH ERFOLGREICHEM SCAN
-    if barcode_input:
-        barcode = "".join(filter(str.isdigit, str(barcode_input)))
+    # WENN EIN CODE VORHANDEN IST -> ZEIGE DIE ANALYSE & DEN RESET BUTTON
+    if st.session_state.manual_code:
+        
+        # Der elegante Knopf für einen neuen Scan
+        st.markdown("<div class='btn-reset'>", unsafe_allow_html=True)
+        st.button(t["btn_reset"], on_click=reset_scanner_view, use_container_width=True)
+        st.markdown("</div><br>", unsafe_allow_html=True)
+        
+        barcode = st.session_state.manual_code
         
         if len(barcode) >= 8:
             with st.spinner("🔍 Produktdaten werden analysiert..."):
@@ -749,7 +571,6 @@ setTimeout(startScanner, 400);
                             st.image(product["image_front_url"], use_container_width=True)
                             st.markdown("</div>", unsafe_allow_html=True)
                     
-                    # ZUSATZANZEIGE: NUTRI-SCORE & KALORIENBERECHCHNUNG
                     st.write("")
                     st.markdown(f"### {t['nutri_title']}")
                     ns_grade = str(product.get("nutriscore_grade", "unknown")).lower()
@@ -758,7 +579,6 @@ setTimeout(startScanner, 400);
                     else:
                         st.markdown(f"<span class='nutri-badge nutri-unknown'>Nutri-Score Unbekannt</span>", unsafe_allow_html=True)
                     
-                    # Kalorien-Metrik auslesen und mit Slider verrechnen
                     nutriments = product.get("nutriments", {})
                     kcal_100g = nutriments.get("energy-kcal_100g", nutriments.get("energy-kcal", 0))
                     
@@ -767,19 +587,42 @@ setTimeout(startScanner, 400);
                         st.metric(label=f"{t['cal_title']} (pro 100g)", value=f"{kcal_100g} kcal")
                         st.info(t["cal_percentage"].format(pct_of_daily))
                     
-                    # Detaillierte Zutaten-Expander inklusive automatischer Übersetzung ins Deutsche
                     st.write("")
                     with st.expander(t["details"]):
                         if is_offline: st.caption("ℹ️ Offline-Testdatenbank aktiv.")
                         st.write(f"**Original Zutaten:** {raw_ingredients if raw_ingredients else 'Keine Angaben verfügbar.'}")
-                        
-                        # Deutsche Übersetzung anzeigen
                         de_translated = translate_ingredients_to_de(raw_ingredients)
                         st.write(f"**{t['de_ingredients']}** {de_translated}")
                 else:
                     st.error(t["not_found"])
 
-    # SCAN-HISTORIE ANZEIGEN
+    # WENN KEIN CODE VORHANDEN IST -> ZEIGE SCANNER ODER EINGABEFELD
+    else:
+        barcode_input = st.text_input("Barcode Entry", placeholder=t["placeholder"], label_visibility="collapsed")
+        if barcode_input:
+            st.session_state.manual_code = "".join(filter(str.isdigit, str(barcode_input)))
+            st.rerun()
+            
+        if not st.session_state.cam_on:
+            if st.button(t["btn_cam_start"]):
+                st.session_state.cam_on = True
+                st.rerun()
+        else:
+            if st.button(t["btn_cam_stop"]):
+                st.session_state.cam_on = False
+                st.rerun()
+            
+            with st.container(border=True):
+                # HIER WIRD DIE MAGISCHE KOMPONENTE AUFGERUFEN
+                # Sobald der JS-Code den Barcode erkennt, gibt er ihn direkt hier als Return-Value zurück!
+                scanned_val = custom_scanner(key=f"scanner_instance_{st.session_state.scanner_key}")
+                
+                if scanned_val:
+                    # Sobald der Scanner etwas zurückgibt, speichern wir es ab und laden die UI neu
+                    st.session_state.manual_code = scanned_val
+                    st.session_state.cam_on = False
+                    st.rerun()
+
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
