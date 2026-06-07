@@ -6,7 +6,7 @@ if "scanned_barcode" in st.query_params:
     scanned = st.query_params["scanned_barcode"]
     if scanned:
         st.session_state.manual_code = scanned
-        st.session_state.cam_on = False  # WICHTIG: Schaltet die Kamera im Streamlit-Backend ab
+        st.session_state.cam_on = False  # Schaltet die Kamera sofort nach Erkennung ab
         st.query_params.clear()
         st.rerun()
 
@@ -16,10 +16,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #F8F9FA; color: #111827; font-family: 'SF Pro Display', -apple-system, sans-serif; }
     header {visibility: hidden;}
-    .stTabs [data-baseweb="tab-list"] { background-color: white; padding: 6px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); gap: 8px; justify-content: center; margin-bottom: 25px; }
-    .stTabs [data-baseweb="tab"] { height: 46px; border-radius: 18px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 20px; border: none !important; }
-    .stTabs [aria-selected="true"] { background-color: #E0E7FF !important; color: #4F46E5 !important; }
-    div[data-testid="stVerticalBlock"] > div[style*="border"] { background-color: white !important; border-radius: 24px !important; border: 1px solid #F3F4F6 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; padding: 25px !important; margin-bottom: 15px; }
+    .stTabs [data-baseweb=\"tab-list\"] { background-color: white; padding: 6px; border-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); gap: 8px; justify-content: center; margin-bottom: 25px; }
+    .stTabs [data-baseweb=\"tab\"] { height: 46px; border-radius: 18px; color: #6B7280; font-weight: 600; font-size: 14px; padding: 0 20px; border: none !important; }
+    .stTabs [aria-selected=\"true\"] { background-color: #E0E7FF !important; color: #4F46E5 !important; }
+    div[data-testid=\"stVerticalBlock\"] > div[style*=\"border\"] { background-color: white !important; border-radius: 24px !important; border: 1px solid #F3F4F6 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; padding: 25px !important; margin-bottom: 15px; }
     h1 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 32px; margin-bottom: 5px;}
     h2 { color: #111827 !important; text-align: center; font-weight: 800; font-size: 26px; margin-bottom: 5px;}
     h3 { color: #111827 !important; text-align: left; font-weight: 700; font-size: 22px; margin-bottom: 10px;}
@@ -117,7 +117,7 @@ ui = {
         "warn": "🛑 غير مناسب!", "not_found": "⚠️ لم يتم العثور على المنتج.", "no_conn": "📡 لا يوجد اتصال بالخادم.",
         "lang_select": "اختر اللغة:", "saved_msg": "✅ تم حفظ الملف بنجاح!", "team_title": "👥 فريق التطوير الصف 10a",
         "w_laktose": "🥛 يحتوي على اللاكتوز/الحليب", "w_fruktose": "🍎 يحتوي على الفركتوز", "w_histamin": "🍷 خطر الهيستامين", "w_sorbit": "🍬 يحتوي على السوربيتول",
-        "w_sulfite": "🧪 يحتوي على الكبريتيت", "w_glutamat": "🍕 يحتوي على الغلوتامات", "w_gluten": "🌾 يحتوي على الغلوتين", "w_nuesse": "🌰 يحتوي على المكسرات", "w_soja": "🌱 يحتوي على الصويا", "w_erdnuesse": "🥜 يحتوي على الفول السوداني",
+        "w_sulfite": "🧪 يحتوي على الكبريتيت", "w_glutamat": "🍕 يحتوي على الغلوتامات", "w_gluten": "🌾 يحتوي على الغلوتن", "w_nuesse": "🌰 يحتوي على المكسرات", "w_soja": "🌱 يحتوي على الصويا", "w_erdnuesse": "🥜 يحتوي على الفول السوداني",
         "w_vegan": "🥩 ليس نباتيًا تامًا", "w_vegetarisch": "🥩 ليس نباتيًا", "w_halal": "☪️ غير متوافق مع الحلال", "w_koscher": "✡️ غير متوافق مع الكوشير",
         "placeholder": "أدخل الباركود...", "hist_title": "🕒 السجل", "details": "🔬 المكونات والتحليل"
     },
@@ -214,7 +214,7 @@ ui = {
         "gluten": "Glúten", "nuesse": "Frutos de casca rija", "soja": "Soja", "erdnuesse": "Amendoins",
         "sulfite": "Sulfitos", "glutamat": "Glutamato", "vegan": "Vegano", "vegetarisch": "Vegetariano", "halal": "Halal", "koscher": "Kosher",
         "scan_h": "Scanner", "scan_p": "Use a câmara ou digite o código manualmente",
-        "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "🛑 Parar Scanner",
+        "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "Parar Scanner",
         "safe": "✅ PRODUTO SEGURO!", "safe_sub": "Este produto está em conformidade com o seu perfil.",
         "warn": "🛑 NÃO COMPATÍVEL!", "not_found": "⚠️ Produto não encontrado.", "no_conn": "📡 Sem ligação.",
         "lang_select": "Idioma:", "saved_msg": "✅ Perfil saved com sucesso!", "team_title": "👥 Equipa Classe 10a",
@@ -341,9 +341,9 @@ with tab_scanner:
     pointer-events: none;
 }
 @keyframes scanning {
-    0% { top: 20%; }
-    50% { top: 80%; }
-    100% { top: 20%; }
+    0% { top: 25%; }
+    50% { top: 75%; }
+    100% { top: 25%; }
 }
 #success-overlay {
     display: none;
@@ -360,67 +360,179 @@ with tab_scanner:
     text-align: center;
     color: white;
     font-family: -apple-system, sans-serif;
-    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-@keyframes popUp {
-    0% { transform: scale(0.6); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+.mode-bar {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+.mode-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 13px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#btn-barcode { background-color: #4F46E5; box-shadow: 0 2px 6px rgba(79,70,229,0.3); }
+#btn-ocr { background-color: #4B5563; }
+#status-text {
+    text-align: center;
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 8px;
+    font-family: sans-serif;
+    font-weight: 600;
 }
 </style>
 
-<div id="reader" style="position: relative;">
-    <div class="scanner-laser"></div>
-    <div id="success-overlay">
-        <div class="scan-card">
-            <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
-            <div style="font-size: 24px; font-weight: 800; letter-spacing: 1px;">CODE ERKANNT!</div>
-            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse wird geladen...</div>
+<div id="scanner-container" style="position: relative; width: 100%;">
+    <div id="reader" style="position: relative;">
+        <div class="scanner-laser" id="laser"></div>
+        <div id="success-overlay">
+            <div class="scan-card">
+                <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
+                <div style="font-size: 22px; font-weight: 800; letter-spacing: 1px;">CODE INTERPRETIERT!</div>
+                <div id="success-code" style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Daten werden verarbeitet...</div>
+            </div>
         </div>
     </div>
+    
+    <div class="mode-bar">
+        <button id="btn-barcode" class="mode-btn" onclick="switchMode('barcode')">🔍 Strichcode-Scanner</button>
+        <button id="btn-ocr" class="mode-btn" onclick="switchMode('ocr')">🤖 KI-Ziffernleser</button>
+    </div>
+    <div id="status-text">Modus: Präzisions-Strichcodeaktivierung</div>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/tesseract.js@4.0.1/dist/tesseract.min.js"></script>
+
 <script>
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
+let html5QrCode = null;
+let ocrInterval = null;
+let currentMode = 'barcode';
+let isOcrProcessing = false;
+
+function initScanner() {
+    html5QrCode = new Html5Qrcode("reader");
     
-    // config mit qrbox verdunkelt den Rand und fokussiert den Scanner auf die Mitte
+    // HD-Auflösungs-Erzwingung für perfekte Barcode-Fokussierung auf iPads
     const config = { 
-        fps: 10,
-        qrbox: { width: 250, height: 150 } 
+        fps: 20,
+        qrbox: { width: 300, height: 120 },
+        videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            aspectRatio: { ideal: 1.7777777778 }
+        }
     };
 
     html5QrCode.start(
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            document.getElementById("success-overlay").style.display = "flex";
-            document.querySelector(".scanner-laser").style.display = "none";
-            
-            // WICHTIG: Stoppt den Hardware-Zugriff der Kamera vor dem Reload
-            html5QrCode.stop().then(() => {
-                setTimeout(() => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("scanned_barcode", decodedText);
-                    window.location.href = url.href;
-                }, 500);
-            }).catch((err) => {
-                // Falls das Stoppen hakt, trotzdem weiterleiten
-                setTimeout(() => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set("scanned_barcode", decodedText);
-                    window.location.href = url.href;
-                }, 500);
-            });
+            if (currentMode === 'barcode') {
+                codeFound(decodedText, "Strichcode");
+            }
         },
         (errorMessage) => {}
-    ).catch(err => {
-        alert("Kamera-Fehler: " + err);
+    ).then(() => {
+        startOcrEngine();
+    }).catch(err => {
+        console.error("Kamerafehler: ", err);
     });
 }
-setTimeout(startScanner, 400);
+
+function switchMode(mode) {
+    currentMode = mode;
+    const btnBarcode = document.getElementById("btn-barcode");
+    const btnOcr = document.getElementById("btn-ocr");
+    const laser = document.getElementById("laser");
+    const statusText = document.getElementById("status-text");
+    
+    if (mode === 'barcode') {
+        btnBarcode.style.backgroundColor = "#4F46E5";
+        btnOcr.style.backgroundColor = "#4B5563";
+        laser.style.backgroundColor = "#EF4444";
+        laser.style.boxShadow = "0 0 10px #EF4444";
+        statusText.innerText = "Modus: Präzisions-Strichcodeaktivierung";
+    } else {
+        btnBarcode.style.backgroundColor = "#4B5563";
+        btnOcr.style.backgroundColor = "#10B981";
+        laser.style.backgroundColor = "#10B981";
+        laser.style.boxShadow = "0 0 10px #10B981";
+        statusText.innerText = "🤖 KI aktiv: Richte die Zahlen unter dem Strichcode mittig aus...";
+    }
+}
+
+function startOcrEngine() {
+    ocrInterval = setInterval(() => {
+        if (currentMode !== 'ocr' || isOcrProcessing) return;
+        
+        const video = document.querySelector("#reader video");
+        if (!video) return;
+        
+        isOcrProcessing = true;
+        
+        // Screenshot vom laufenden Live-Feed abfangen
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // KI Texterkennung starten (Nur Ziffernextraktion aktivieren)
+        Tesseract.recognize(
+            canvas,
+            'eng',
+            { tessedit_char_whitelist: '0123456789' }
+        ).then(({ data: { text } }) => {
+            let digits = text.replace(/[^0-9]/g, "");
+            // EAN Codes filtern (EAN-8 oder EAN-13)
+            if (digits.length >= 8 && digits.length <= 14) {
+                codeFound(digits, "KI-Ziffernerkennung");
+            }
+            isOcrProcessing = false;
+        }).catch(err => {
+            console.error("KI-Fehler: ", err);
+            isOcrProcessing = false;
+        });
+    }, 1200); // Scannt alle 1.2 Sekunden im Hintergrund
+}
+
+function codeFound(code, method) {
+    clearInterval(ocrInterval);
+    document.getElementById("success-overlay").style.display = "flex";
+    document.getElementById("success-code").innerText = method + ": " + code;
+    
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            transmitToApp(code);
+        }).catch(() => {
+            transmitToApp(code);
+        });
+    } else {
+        transmitToApp(code);
+    }
+}
+
+function transmitToApp(code) {
+    setTimeout(() => {
+        const url = new URL(window.parent.location.href);
+        url.searchParams.set("scanned_barcode", code);
+        window.parent.location.href = url.href;
+    }, 400);
+}
+
+setTimeout(initScanner, 400);
 </script>
-""", height=360)
+""", height=430)
     else:
         st.session_state.cam_on = False
 
