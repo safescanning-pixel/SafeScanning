@@ -2,17 +2,17 @@ import streamlit as st
 import requests
 import streamlit.components.v1 as components
 
-# WICHTIG: set_page_config MUSS ganz oben stehen!
+# 1. WICHTIG: set_page_config MUSS DIE ALLERERSTE STREAMLIT-AKTION SEIN! Keine Ausnahmen!
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# Barcode aus der URL abfangen und sauber in den Session State laden
+# 2. ERST DANACH darf die URL abgefragt werden.
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params.get("scanned_barcode")
     if scanned:
         st.session_state.manual_code = scanned
-        st.session_state.cam_on = False  # Kamera ausschalten nach erfolgreichem Scan
-        st.query_params.clear()  # URL säubern
-        st.rerun() # Einmalig neuladen, um die Analyse mit dem neuen Code zu starten
+        st.session_state.cam_on = False  # Kamera ausschalten, da wir fertig sind
+        st.query_params.clear()  # URL sofort säubern
+        # Kein st.rerun() hier! Das Skript läuft einfach weiter nach unten und analysiert direkt.
 
 st.markdown("""
     <style>
@@ -307,7 +307,7 @@ with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
     
-    # Textfeld nimmt nun den automatisch geparsten Code aus dem Session-State auf
+    # Textfeld aktualisiert sich jetzt automatisch mit dem gescannten Wert
     barcode_input = st.text_input("Barcode Entry", value=st.session_state.manual_code, placeholder=t["placeholder"], label_visibility="collapsed")
     
     if not barcode_input:
@@ -323,52 +323,13 @@ with tab_scanner:
             with st.container(border=True):
                 components.html("""
 <style>
-#reader {
-    width: 100%;
-    border-radius: 20px;
-    overflow: hidden;
-    position: relative;
-    background-color: #000;
-}
-#reader video {
-    object-fit: cover !important;
-    border-radius: 20px;
-}
-.scanner-laser {
-    position: absolute;
-    left: 10%; width: 80%; height: 2px;
-    background-color: #EF4444;
-    box-shadow: 0 0 10px #EF4444;
-    animation: scanning 2s infinite ease-in-out;
-    z-index: 100;
-    pointer-events: none;
-}
-@keyframes scanning {
-    0% { top: 20%; }
-    50% { top: 80%; }
-    100% { top: 20%; }
-}
-#success-overlay {
-    display: none;
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(79, 70, 229, 0.9);
-    backdrop-filter: blur(5px);
-    z-index: 500;
-    align-items: center;
-    justify-content: center;
-    border-radius: 20px;
-}
-.scan-card {
-    text-align: center;
-    color: white;
-    font-family: -apple-system, sans-serif;
-    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-@keyframes popUp {
-    0% { transform: scale(0.6); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
+#reader { width: 100%; border-radius: 20px; overflow: hidden; position: relative; background-color: #000; }
+#reader video { object-fit: cover !important; border-radius: 20px; }
+.scanner-laser { position: absolute; left: 10%; width: 80%; height: 2px; background-color: #EF4444; box-shadow: 0 0 10px #EF4444; animation: scanning 2s infinite ease-in-out; z-index: 100; pointer-events: none; }
+@keyframes scanning { 0% { top: 20%; } 50% { top: 80%; } 100% { top: 20%; } }
+#success-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(79, 70, 229, 0.9); backdrop-filter: blur(5px); z-index: 500; align-items: center; justify-content: center; border-radius: 20px; }
+.scan-card { text-align: center; color: white; font-family: -apple-system, sans-serif; animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes popUp { 0% { transform: scale(0.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 </style>
 
 <div id="reader" style="position: relative;">
@@ -377,7 +338,7 @@ with tab_scanner:
         <div class="scan-card">
             <div style="font-size: 50px; margin-bottom: 10px; animation: pulse 1s infinite alternate;">🛡️</div>
             <div style="font-size: 24px; font-weight: 800; letter-spacing: 1px;">CODE ERKANNT!</div>
-            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse wird geladen...</div>
+            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Analyse startet...</div>
         </div>
     </div>
 </div>
@@ -386,55 +347,49 @@ with tab_scanner:
 <script>
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
-    
-    // Einfache und verlässliche Scanner-Config, die alles erkennt
-    const config = { 
-        fps: 10,
-        qrbox: { width: 250, height: 150 }
-    };
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
     html5QrCode.start(
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            // UI Update: Code wurde erkannt
+            // UI Update bei Erfolg
             document.getElementById("success-overlay").style.display = "flex";
             document.querySelector(".scanner-laser").style.display = "none";
             
-            // Kamera anhalten und Code sicher übergeben
+            // Bereinigen, falls Sonderzeichen drin sind
+            const cleanCode = decodedText.replace(/[^0-9]/g, '');
+            
+            // Kamera stoppen und Streamlit die Zahl übergeben
             html5QrCode.stop().then(() => {
-                // Nur Ziffern extrahieren, um Formatfehler für OpenFoodFacts auszuschließen
-                const cleanCode = decodedText.replace(/[^0-9]/g, '');
                 const url = new URL(window.parent.location.href);
                 url.searchParams.set("scanned_barcode", cleanCode);
-                window.parent.location.href = url.href;
+                window.parent.location.replace(url.href);
             }).catch(err => {
-                // Fallback, falls stop() fehlschlägt
-                const cleanCode = decodedText.replace(/[^0-9]/g, '');
+                // Fallback, falls der Stopp-Befehl hängt
                 const url = new URL(window.parent.location.href);
                 url.searchParams.set("scanned_barcode", cleanCode);
-                window.parent.location.href = url.href;
+                window.parent.location.replace(url.href);
             });
         },
-        (errorMessage) => {
-            // Wird während des Scannens kontinuierlich aufgerufen, daher ignorieren
-        }
+        (errorMessage) => { /* Ignorieren während des Scans */ }
     ).catch(err => {
-        alert("Kamera-Fehler: Bitte erlaube den Zugriff auf die Kamera in deinem Browser.");
+        alert("Kamera-Fehler: Bitte erlaube den Zugriff auf die Kamera.");
     });
 }
+// Leichte Verzögerung zum sauberen Laden des iframes
 setTimeout(startScanner, 400);
 </script>
 """, height=360)
     else:
         st.session_state.cam_on = False
 
-    # Sobald der Code im Textfeld landet, startet sofort die Produktanalyse
+    # DIESER BLOCK FÜHRT NUN AUTOMATISCH AUS, SOBALD EIN CODE EINGETRAGEN WURDE!
     if barcode_input:
         barcode = "".join(filter(str.isdigit, str(barcode_input)))
         
         if len(barcode) >= 8:
-            with st.spinner("🔍 ..."):
+            with st.spinner("🔍 Produktdaten werden geladen..."):
                 product = None
                 is_offline = False
                 
@@ -447,22 +402,27 @@ setTimeout(startScanner, 400);
                 except:
                     pass
                 
+                # Wenn API fehlschlägt, in lokaler Test-Datenbank suchen
                 if not product and barcode in OFFLINE_DATA:
                     product = OFFLINE_DATA[barcode]
                     is_offline = True
                 
                 if product:
-                    p_name = product.get('product_name', 'Unknown Product')
+                    p_name = product.get('product_name', 'Unbekanntes Produkt')
+                    
+                    # Historie aktualisieren
                     if {"name": p_name, "code": barcode} not in st.session_state.history:
                         st.session_state.history.insert(0, {"name": p_name, "code": barcode})
                         if len(st.session_state.history) > 4: st.session_state.history.pop()
                     
+                    # Zutaten und Labels auslesen
                     tags_text = " ".join(product.get("allergens_tags", [])) + " " + " ".join(product.get("ingredients_analysis_tags", [])) + " " + " ".join(product.get("labels_tags", []))
                     all_text = (str(product.get("ingredients_text", "")) + " " + str(product.get("ingredients_text_en", "")) + " " + str(product.get("ingredients_text_fr", "")) + " " + str(product.get("ingredients_text_de", "")) + " " + tags_text).lower()
                     
                     warnings = []
                     p = st.session_state.profile
                     
+                    # Abgleich mit Profil
                     if p["laktose"] and any(w in all_text for w in ["milch", "milk", "lait", "lactose", "laktose", "molke", "sahne", "butter", "en:milk"]): warnings.append(t["w_laktose"])
                     if p["fruktose"] and any(w in all_text for w in ["fructose", "fruktose", "fruchtzucker", "sirup"]): warnings.append(t["w_fruktose"])
                     if p["histamin"] and any(w in all_text for w in ["histamin", "hefe", "yeast", "wein", "tomate", "schokolade"]): warnings.append(t["w_histamin"])
@@ -498,7 +458,7 @@ setTimeout(startScanner, 400);
                     st.write("")
                     with st.expander(t["details"]):
                         if is_offline: st.caption("ℹ️ Offline Fallback genutzt.")
-                        st.write(f"**Ingredients:** {product.get('ingredients_text', 'N/A')}")
+                        st.write(f"**Zutatenliste:** {product.get('ingredients_text', 'Keine detaillierten Angaben verfügbar.')}")
                 else:
                     st.error(t["not_found"])
 
