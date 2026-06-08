@@ -836,6 +836,9 @@ with tab_info:
         st.write("👨‍💻 **Ben Henkel**")
         st.write("👨‍💻 **Maximilian Maier**")
         st.caption("Hösbach / Germany")
+        st.write(" ")
+        st.write("Contact: safescanning@gmail.com")
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
+        
     
