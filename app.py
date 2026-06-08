@@ -809,8 +809,11 @@ with tab_info:
         st.write(" ")
         st.write(" ")
         st.write(" ")
-        st.caption("8, 1st Cross Road")
+        st.write(" ")
+        st.write(" ")
+        st.caption("18, Dr Parvathamma Rajkumar Road")
         st.caption("Sakamma Garden, Jayanagar")
         st.caption("Bangalore, 560004")
         st.caption("Karnataka")          
         st.caption("Indien")
+    
