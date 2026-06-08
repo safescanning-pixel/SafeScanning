@@ -813,7 +813,7 @@ if not st.session_state.ad_free:
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
         </div>
-        <div class="ad-left-banner">
+<div class="ad-left-banner">
             ✨ WERBUNG ✨
         </div>
     """, unsafe_allow_html=True)
