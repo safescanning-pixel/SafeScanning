@@ -774,9 +774,9 @@ with tab_settings:
             st.write(":blue[ad-free.com]")
             st.markdown("""
                 <div style="text-align: center; margin: 15px 0;">
-                    <span style="text-decoration: line-through; color: #9CA3AF; font-size: 18px; margin-right: 12px; font-weight: 500;">25,00 €</span>
-                    <span style="color: #10B981; font-size: 28px; font-weight: 800; background-color: #E6F4EA; padding: 6px 16px; border-radius: 14px; border: 1px solid #A7F3D0; display: inline-block;">19,99 €</span>
-                    <p style="color: #6B7280; font-size: 13px; margin-top: 8px; font-weight: 500; text-align: center;">Einmalige Zahlung • Lebenslanger Premium-Schutz</p>
+                    <span style="text-decoration: line-through; color: #9CA3AF; font-size: 18px; margin-right: 12px; font-weight: 500;">7 €</span>
+                    <span style="color: #10B981; font-size: 28px; font-weight: 800; background-color: #E6F4EA; padding: 6px 16px; border-radius: 14px; border: 1px solid #A7F3D0; display: inline-block;">3,99 €</span>
+                    <p style="color: #6B7280; font-size: 13px; margin-top: 8px; font-weight: 500; text-align: center;">monatlich</p>
                 </div>
             """, unsafe_allow_html=True)
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
