@@ -747,25 +747,7 @@ with tab_settings:
                 else:
                     st.error("❌ Ungültiger Code.")
             
-            # Ausblendbarer Bereich zum Festlegen des Werbebanner-Bildes
-            st.markdown("---")
-            with st.expander("📐 Linkes Werbebanner anpassen", expanded=False):
-                st.markdown("<p style='text-align:left; font-size:13px;'>Lade hier ein Bild hoch, welches in der linken Werbefläche platziert wird:</p>", unsafe_allow_html=True)
-                uploaded_ad_file = st.file_uploader("Bild hochladen (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
-                if uploaded_ad_file is not None:
-                    file_bytes = uploaded_ad_file.read()
-                    encoded_img = base64.b64encode(file_bytes).decode("utf-8")
-                    st.session_state.ad_image_b64 = f"data:{uploaded_ad_file.type};base64,{encoded_img}"
-                    st.success("Bild geladen!")
-                    time.sleep(0.5)
-                    st.rerun()
-                
-                if st.session_state.ad_image_b64:
-                    if st.button("Bild entfernen (Standardtext nutzen)"):
-                        st.session_state.ad_image_b64 = None
-                        st.success("Bild zurückgesetzt.")
-                        time.sleep(0.5)
-                        st.rerun()
+        
         else:
             st.success("✨ Du nutzt bereits die werbefreie Pro-Version. Danke!")
 
