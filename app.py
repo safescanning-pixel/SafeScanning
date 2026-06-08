@@ -120,6 +120,29 @@ st.markdown("""
         z-index: 9999;
         box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
     }
+    .ad-left-banner {
+        position: fixed;
+        top: 25%;
+        left: 10px;
+        width: 45px;
+        height: 250px;
+        background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
+        color: #6B7280;
+        text-align: center;
+        padding: 15px 5px;
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: 3px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+    }
     .ad-spacer {
         height: 70px; /* Verhindert, dass Content vom Banner verdeckt wird */
         width: 100%;
@@ -315,7 +338,7 @@ ui = {
         "w_laktose": "🥛 Содержит лактозу", "w_fruktose": "🍎 Содержит фруктозу", "w_histamin": "🍷 Риск гистамина", "w_sorbit": "🍬 Содержит сорбит",
         "w_sulfite": "🧪 Содержит сульфиты", "w_glutamat": "🍕 Содержит глутамат", "w_gluten": "🌾 Содержит глютен", "w_nuesse": "🌰 Содержит орехи", "w_soja": "🌱 Содержит сою", "w_erdnuesse": "🥜 Содержит арахис",
         "w_vegan": "🥩 Не веганский", "w_vegetarisch": "🥩 Не вегетарианский", "w_halal": "☪️ Не халяльно", "w_koscher": "✡️ Не кошерно",
-        "placeholder": "Штрихкод...", "hist_title": "🕒 История", "details": "🔬 Ингредиенты",
+        "placeholder": "Штрихкод...", "記録": "🕒 기록", "details": "🔬 성분",
         "nutri_title": "🥗 Питательность", "cal_title": "🔥 Калории", "cal_slider": "Суточная норма (ккал):",
         "cal_percentage": "Расходует **{:.1f}%** суточной нормы.", "de_ingredients": "🇩🇪 Ингредиенты:"
     },
@@ -378,7 +401,7 @@ ui = {
     },
     "Português": {
         "t1": "👤 Perfil", "t2": "📸 Scanner", "t3": "⚙️ Definições", "t4": "ℹ️ Info",
-        "title": "Meu Perfil", "sub": "Configure as suas alergias", "save": "Salvar",
+        "title": "Meu Perfil", "sub": "Configure as suas allergies", "save": "Salvar",
         "cat_allergy": "Alérgenos", "cat_additives": "Aditivos", "cat_lifestyle": "Estilo de vida",
         "laktose": "Lactose / Leite", "fruktose": "Frutose", "histamin": "Histamina", "sorbit": "Sorbitol",
         "gluten": "Glúten", "nuesse": "Nozes", "soja": "Soja", "erdnuesse": "Amendoins",
@@ -448,7 +471,7 @@ INGREDIENTS_DICT = {
     "vegetable fats": "pflanzliche Fette", "shea": "Shea", "whole wheat flour": "Vollkornweizenmehl",
     "butterfat": "Buttereinfett", "wheat starch": "Weizenstärke", "whey product": "Molkenerzeugnis",
     "milk": "Milch", "salt": "Salz", "glucose syrup": "Glukosesirup", "barley malt extract": "Gerstenmalzextrakt",
-    "cocoa butter": "Kakaobutter", "cocoa mass": "Kakaomasse", "whole milk powder": "Vollmilchpulver",
+    "cocoa butter": "Kakaobutter", "cocoa mass": "Kakaomasse", "whole milk powder": "Vollmilchpowler",
     "lactose": "Laktose", "whey powder": "Molkenpowder", "egg white": "Eiweiß", "yolk": "Eigelb",
     "preservative": "Konservierungsstoff", "citric acid": "Zitronensäure", "ascorbic acid": "Ascorbinsäure",
     "thickener": "Verdickungsmittel", "xanthan gum": "Xanthan", "pectin": "Pektin", "yeast": "Hefe",
@@ -516,9 +539,11 @@ with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
     
-    with st.container(border=True):
-        st.markdown(f"<h5>{t['cal_title']}</h5>", unsafe_allow_html=True)
-        daily_cal_budget = st.slider(t["cal_slider"], min_value=1200, max_value=4000, value=2000, step=50)
+    daily_cal_budget = 2000
+    if st.session_state.ad_free:
+        with st.container(border=True):
+            st.markdown(f"<h5>{t['cal_title']}</h5>", unsafe_allow_html=True)
+            daily_cal_budget = st.slider(t["cal_slider"], min_value=1200, max_value=4000, value=2000, step=50)
 
     barcode_input = st.text_input("Barcode Entry", value=st.session_state.manual_code, placeholder=t["placeholder"], label_visibility="collapsed")
     
@@ -590,15 +615,12 @@ function startScanner() {
                 if (targetInput) {
                     targetInput.focus();
                     
-                    // React-kompatibles Setzen des Wertes
                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                     nativeInputValueSetter.call(targetInput, finalCode);
                     
-                    // Events abfeuern, um Datensynchronisation anzustoßen
                     targetInput.dispatchEvent(new Event('input', { bubbles: true }));
                     targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                     
-                    // Enter-Simulations-Event für absolute Sicherheit
                     const enterEvent = new KeyboardEvent('keydown', { 
                         bubbles: true, 
                         cancelable: true, 
@@ -609,7 +631,6 @@ function startScanner() {
                     });
                     targetInput.dispatchEvent(enterEvent);
                     
-                    // Der magische Kniff: Das Verlassen des Feldes (blur) zwingt Streamlit zum sofortigen Submit!
                     setTimeout(() => {
                         targetInput.blur();
                     }, 50);
@@ -631,7 +652,6 @@ setTimeout(startScanner, 400);
     else:
         st.session_state.cam_on = False
 
-    # VERARBEITUNG UND ALGORITHMUS NACH ERFOLGREICHEM SCAN
     if barcode_input:
         barcode = "".join(filter(str.isdigit, str(barcode_input)))
         
@@ -707,13 +727,14 @@ setTimeout(startScanner, 400);
                     else:
                         st.markdown(f"<span class='nutri-badge nutri-unknown'>Nutri-Score Unbekannt</span>", unsafe_allow_html=True)
                     
-                    nutriments = product.get("nutriments", {})
-                    kcal_100g = nutriments.get("energy-kcal_100g", nutriments.get("energy-kcal", 0))
-                    
-                    if kcal_100g:
-                        pct_of_daily = (float(kcal_100g) / daily_cal_budget) * 100
-                        st.metric(label=f"{t['cal_title']} (pro 100g)", value=f"{kcal_100g} kcal")
-                        st.info(t["cal_percentage"].format(pct_of_daily))
+                    if st.session_state.ad_free:
+                        nutriments = product.get("nutriments", {})
+                        kcal_100g = nutriments.get("energy-kcal_100g", nutriments.get("energy-kcal", 0))
+                        
+                        if kcal_100g:
+                            pct_of_daily = (float(kcal_100g) / daily_cal_budget) * 100
+                            st.metric(label=f"{t['cal_title']} (pro 100g)", value=f"{kcal_100g} kcal")
+                            st.info(t["cal_percentage"].format(pct_of_daily))
                     
                     st.write("")
                     with st.expander(t["details"]):
@@ -751,10 +772,13 @@ with tab_settings:
         if not st.session_state.ad_free:
             st.write("Werbefreie Version kaufen?")
             st.write(":blue[ad-free.com]")
-            st.markdown(
-    "<p style='text-align: center; color: #FF0000; font-size: 28px; font-weight: bold;'>2̶5̶€̶ --> 19.99€ (einmalig)</p>", 
-    unsafe_allow_html=True
-)
+            st.markdown("""
+                <div style="text-align: center; margin: 15px 0;">
+                    <span style="text-decoration: line-through; color: #9CA3AF; font-size: 18px; margin-right: 12px; font-weight: 500;">25,00 €</span>
+                    <span style="color: #10B981; font-size: 28px; font-weight: 800; background-color: #E6F4EA; padding: 6px 16px; border-radius: 14px; border: 1px solid #A7F3D0; display: inline-block;">19,99 €</span>
+                    <p style="color: #6B7280; font-size: 13px; margin-top: 8px; font-weight: 500; text-align: center;">Einmalige Zahlung • Lebenslanger Premium-Schutz</p>
+                </div>
+            """, unsafe_allow_html=True)
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
@@ -788,5 +812,8 @@ if not st.session_state.ad_free:
     st.markdown("""
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
+        </div>
+        <div class="ad-left-banner">
+            ✨ WERBUNG ✨
         </div>
     """, unsafe_allow_html=True)
