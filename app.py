@@ -3,13 +3,8 @@ import requests
 import streamlit.components.v1 as components
 import time
 
-# ==========================================
-# 1. INITIALISIERUNG & SEITEN-KONFIGURATION
-# ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# URL-Parameter sofort zu Beginn verarbeiten, um Weiterleitungs-Schleifen zu vermeiden
-# Das funktioniert jetzt nahtlos im selben Tab, sodass alle Einstellungen erhalten bleiben!
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params.get("scanned_barcode")
     if scanned:
@@ -17,9 +12,6 @@ if "scanned_barcode" in st.query_params:
         st.session_state.cam_on = False  
         st.query_params.clear()  
 
-# ==========================================
-# 2. STYLING (CSS)
-# ==========================================
 st.markdown("""
     <style>
     .stApp { 
@@ -143,9 +135,7 @@ def throw_confetti():
         """, height=0,
     )
 
-# ==========================================
-# 3. SESSION STATES
-# ==========================================
+
 if 'lang' not in st.session_state: 
     st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: 
@@ -174,9 +164,6 @@ if 'profile' not in st.session_state:
         "koscher": False
     }
 
-# ==========================================
-# 4. MULTILINGUALE DATENBANK (UI TEXTE)
-# ==========================================
 ui = {
     "Deutsch": {
         "t1": "👤 Profil", 
@@ -450,9 +437,6 @@ ui = {
 
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
-# ==========================================
-# 5. ÜBERSETZUNGS-ENGINE (ENG -> DEUTSCH)
-# ==========================================
 INGREDIENTS_DICT = {
     "sugar": "Zucker", "palm oil": "Palmöl", "hazelnuts": "Haselnüsse", "skimmed milk powder": "Magermilchpulver",
     "fat-reduced cocoa": "fettarmer Kakao", "emulsifier": "Emulgator", "lecithins": "Lecithine", "soya": "Soja",
@@ -494,9 +478,6 @@ def translate_ingredients_to_de(text):
         text_lower = text_lower.replace(eng, de)
     return text_lower.capitalize()
 
-# ==========================================
-# 6. ERWEITERTE OFFLINE DATENBANK
-# ==========================================
 OFFLINE_DATA = {
     "3017620425035": {
         "product_name": "Nutella", 
@@ -577,9 +558,6 @@ OFFLINE_DATA = {
     }
 }
 
-# ==========================================
-# 7. TAB-LAYOUT DER BENUTZEROBERFLÄCHE
-# ==========================================
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
 # --- TAB 1: SCHUTZPROFIL ---
@@ -613,7 +591,6 @@ with tab_profil:
     if st.button(f"💾 {t['save']}"):
         st.success(t["saved_msg"])
 
-# --- TAB 2: LIVE-SCANNER & AUSWERTUNG ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
@@ -634,9 +611,7 @@ with tab_scanner:
                 st.session_state.cam_on = False
                 st.rerun()
             
-            # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - VOLLAUTOMATISCH OHNE ENTER / REFRESH
-            # -------------------------------------------------------------
+
             with st.container(border=True):
                 components.html("""
 <style>
@@ -829,7 +804,7 @@ setTimeout(startScanner, 400);
                 else:
                     st.error(t["not_found"])
 
-    # SCAN-HISTORIE ANZEIGEN
+    
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
@@ -838,7 +813,7 @@ setTimeout(startScanner, 400);
                 st.session_state.manual_code = item['code']
                 st.rerun()
 
-# --- TAB 3: EINSTELLUNGEN ---
+
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
@@ -849,12 +824,12 @@ with tab_settings:
             st.session_state.lang = new_lang
             st.rerun()
             
-    # NEU: WERBEFREIE VERSION INTEGRIERT
+
     with st.container(border=True):
         st.markdown(f"<h4>🚫 Werbefreie Version</h4>", unsafe_allow_html=True)
         if not st.session_state.ad_free:
             st.write("Schalte die lästige Werbung mit einem Code frei.")
-            promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben (z.B. FREE)", type="password", label_visibility="collapsed")
+            promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
                     st.session_state.ad_free = True
@@ -866,7 +841,6 @@ with tab_settings:
         else:
             st.success("✨ Du nutzt bereits die werbefreie Pro-Version. Danke!")
 
-# --- TAB 4: LIZENZ & ENTWICKLER-INFO ---
 with tab_info:
     with st.container(border=True):
         st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
@@ -882,9 +856,7 @@ with tab_info:
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
 
-# ==========================================
-# 8. AD BANNER (STATISCH UNTEN)
-# ==========================================
+
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
     st.markdown("""
