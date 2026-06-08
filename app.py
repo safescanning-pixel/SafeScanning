@@ -478,89 +478,10 @@ def translate_ingredients_to_de(text):
         text_lower = text_lower.replace(eng, de)
     return text_lower.capitalize()
 
-OFFLINE_DATA = {
-    "3017620425035": {
-        "product_name": "Nutella", 
-        "ingredients_text": "Zucker, Palmöl, Haselnüsse (13%), Magermilchpulver (8,7%), fettarmer Kakao, Emulgator Lecithine (Soja), Vanillin.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/301/762/042/5035/front_fr.465.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 539, "carbohydrates_100g": 56.3, "fat_100g": 30.9, "proteins_100g": 6.3}
-    },
-    "5449000000996": {
-        "product_name": "Coca Cola Classic", 
-        "ingredients_text": "Wasser, Zucker, Kohlensäure, Farbstoff E 150d, Säuerungsmittel Phosphorsäure, natürliches Aroma, Aroma Koffein.", 
-        "image_front_url": "https://world.openfoodfacts.org/images/products/544/900/000/0996/front_de.643.400.jpg",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 42, "carbohydrates_100g": 10.6, "fat_100g": 0, "proteins_100g": 0}
-    },
-    "40335711": {
-        "product_name": "Ahoj-Brause Pulver", 
-        "ingredients_text": "Zucker, Säuerungsmittel: Weinsäure, Natriumhydrogencarbonat, Natriumcyclamat, Acesulfam-K, Saccharin-Natrium, Aromen, Karotine.", 
-        "image_front_url": "",
-        "nutriscore_grade": "d",
-        "nutriments": {"energy-kcal_100g": 328, "carbohydrates_100g": 67, "fat_100g": 0, "proteins_100g": 0}
-    },
-    "4002234027733": {
-        "product_name": "Knoppers", 
-        "ingredients_text": "Zucker, pflanzliche Fette (Palm, Shea), Magermilchpulver, Weizenmehl, Haselnüsse, Vollkornweizenmehl, Kakao, Butterreinfett, Magerkakao, Weizenstärke, Emulgator Lecithine (Soja), Molkenerzeugnis.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 551, "carbohydrates_100g": 52.4, "fat_100g": 34.2, "proteins_100g": 8.8}
-    },
-    "4008400401829": {
-        "product_name": "Kinder Bueno", 
-        "ingredients_text": "Milchschokolade 31,5% (Zucker, Kakaobutter, Kakaomasse, Magermilchpulver, Butterreinfett, Emulgator Lecithine (Soja), Vanillin), Zucker, Palmöl, Weizenmehl, Haselnüsse (10,8%), Magermilchpulver.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 572, "carbohydrates_100g": 49.5, "fat_100g": 37.3, "proteins_100g": 8.6}
-    },
-    "4011100062402": {
-        "product_name": "Pringles Original", 
-        "ingredients_text": "Kartoffelpüree-Pulver, pflanzliche Öle (Sonnenblume, Mais), Reismehl, Weizenstärke, Maismehl, Emulgator (E471), Maltodextrin, Salz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "d",
-        "nutriments": {"energy-kcal_100g": 522, "carbohydrates_100g": 51, "fat_100g": 33, "proteins_100g": 4.0}
-    },
-    "4100060045431": {
-        "product_name": "Alnatura Haferdrink Ungezuckert", 
-        "ingredients_text": "Wasser, Vollkornhafer (11%), Sonnenblumenöl, Meersalz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "b",
-        "nutriments": {"energy-kcal_100g": 41, "carbohydrates_100g": 6.8, "fat_100g": 1.1, "proteins_100g": 0.5}
-    },
-    "7622210449283": {
-        "product_name": "Milka Alpenmilch Schokolade", 
-        "ingredients_text": "Zucker, Kakaobutter, Magermilchpulver, Kakaomasse, Süßmolkenpulver (aus Milch), Butterreinfett, Haselnussmasse, Emulgator (Sojalecithine), Aroma.", 
-        "image_front_url": "",
-        "nutriscore_grade": "e",
-        "nutriments": {"energy-kcal_100g": 530, "carbohydrates_100g": 59, "fat_100g": 29, "proteins_100g": 6.3}
-    },
-    "4009300010189": {
-        "product_name": "Haribo Goldbären", 
-        "ingredients_text": "Glukosesirup, Zucker, Gelatine, Dextrose, Fruchtsaft aus Fruchtsaftkonzentrat, Säuerungsmittel: Citronensäure, Frucht- und Pflanzenkonzentrate.", 
-        "image_front_url": "",
-        "nutriscore_grade": "c",
-        "nutriments": {"energy-kcal_100g": 343, "carbohydrates_100g": 77, "fat_100g": 0.1, "proteins_100g": 6.9}
-    },
-    "4251232200204": {
-        "product_name": "Yfood This is Food Classic Choco", 
-        "ingredients_text": "Fettarme Milch, Wasser, Milcheiweiß, pflanzliche Öle (Raps, Sonnenblume), Kokosnussmilch, glutenfreie Haferfaser, lösliche Maisfaser, Reispulver.", 
-        "image_front_url": "",
-        "nutriscore_grade": "a",
-        "nutriments": {"energy-kcal_100g": 100, "carbohydrates_100g": 7.8, "fat_100g": 4.8, "proteins_100g": 6.8}
-    },
-    "4006544418208": {
-        "product_name": "Test Bio Haferdrink", 
-        "ingredients_text": "Wasser, Vollkornhafer (12%), Sonnenblumenöl, Meersalz.", 
-        "image_front_url": "",
-        "nutriscore_grade": "a",
-        "nutriments": {"energy-kcal_100g": 45, "carbohydrates_100g": 6.5, "fat_100g": 1.5, "proteins_100g": 1.0}
-    }
-}
+
 
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
-# --- TAB 1: SCHUTZPROFIL ---
 with tab_profil:
     st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['sub']}</p>", unsafe_allow_html=True)
@@ -830,7 +751,7 @@ with tab_settings:
         if not st.session_state.ad_free:
             st.write("Werbefreie Version kaufen?")
             st.write("ad-free.com")
-            st.markdown("7̶€̶ -> 3,99€")
+            st.markdown(f"7̶€̶ -> 3,99€", unsafe_allow_html=True)
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
