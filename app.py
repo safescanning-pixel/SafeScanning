@@ -751,13 +751,13 @@ with tab_settings:
         if not st.session_state.ad_free:
             st.write("Werbefreie Version kaufen?")
             st.write(":blue[ad-free.com]")
-            st.write("### :red[                 7̶€̶ -> 3,99€]")
+            st.write("### :red[                   7̶€̶ -> 3,99€]")
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
                     st.session_state.ad_free = True
                     st.success("✅ Werbefreie Version erfolgreich aktiviert!")
-                    time.sleep(1) # Kurze Pause für den Erfolgs-Effekt
+                    time.sleep(1) 
                     st.rerun()
                 else:
                     st.error("❌ Ungültiger Code.")
