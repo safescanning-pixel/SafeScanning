@@ -750,8 +750,8 @@ with tab_settings:
         st.markdown(f"<h4>🚫 Werbefreie Version</h4>", unsafe_allow_html=True)
         if not st.session_state.ad_free:
             st.write("Werbefreie Version kaufen?")
-            st.write("## :blue[                    ad-free.com]")
-            st.markdown(f"7̶€̶ -> 3,99€", unsafe_allow_html=True)
+            st.write(":blue[ad-free.com]")
+            st.write("### :red[                 7̶€̶ -> 3,99€]")
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
