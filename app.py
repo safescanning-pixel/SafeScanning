@@ -752,7 +752,7 @@ with tab_settings:
             st.write("Werbefreie Version kaufen?")
             st.write(":blue[ad-free.com]")
             st.markdown(
-    "<p style='text-align: center; color: #4F46E5; font-size: 22px; font-weight: bold;'>7̶€̶ -> 3,99€</p>", 
+    "<p style='text-align: center; color: #FF0000; font-size: 28px; font-weight: bold;'>7̶€̶ -> 3,99€</p>", 
     unsafe_allow_html=True
 )
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
