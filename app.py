@@ -828,7 +828,9 @@ with tab_settings:
     with st.container(border=True):
         st.markdown(f"<h4>🚫 Werbefreie Version</h4>", unsafe_allow_html=True)
         if not st.session_state.ad_free:
-            st.write("Schalte die lästige Werbung mit einem Code frei.")
+            st.write("Werbefreie Version kaufen?")
+            st.write("Kontaktiere safescanning@gmail.com")
+            st.markdown("7̶€̶ -> 3,99€")
             promo_code = st.text_input("Aktivierungscode", placeholder="Code eingeben", type="password", label_visibility="collapsed")
             if promo_code:
                 if promo_code.strip().upper() == "FREE":
