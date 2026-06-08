@@ -124,15 +124,15 @@ st.markdown("""
         position: fixed;
         top: 25%;
         left: 10px;
-        width: 45px;
-        height: 250px;
+        width: 180px; /* Geändert: Deutlich breiter für waagerechten Text */
+        height: 150px; /* Geändert: Etwas kürzer in der Höhe, aber insgesamt größeres Feld */
         background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
         color: #6B7280;
         text-align: center;
-        padding: 15px 5px;
+        padding: 15px;
         font-weight: 800;
-        font-size: 11px;
-        letter-spacing: 3px;
+        font-size: 14px; /* Geändert: Schrift etwas vergrößert */
+        letter-spacing: 2px;
         border: 1px solid #d1d5db;
         border-radius: 12px;
         z-index: 9999;
@@ -140,8 +140,7 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: center;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
+        /* writing-mode und text-orientation wurden entfernt, damit es waagerecht ist */
     }
     .ad-spacer {
         height: 70px; /* Verhindert, dass Content vom Banner verdeckt wird */
@@ -813,7 +812,7 @@ if not st.session_state.ad_free:
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
         </div>
-<div class="ad-left-banner">
+        <div class="ad-left-banner">
             ✨ WERBUNG ✨
         </div>
     """, unsafe_allow_html=True)
