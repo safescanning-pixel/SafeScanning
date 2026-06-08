@@ -811,6 +811,6 @@ with tab_info:
         st.write(" ")
         st.caption("8, 1st Cross Road")
         st.caption("Sakamma Garden, Jayanagar")
-        st.caption("Bengaluru, 560004)
+        st.caption("Bangalore, 560004")
         st.caption("Karnataka")          
         st.caption("Indien")
