@@ -835,4 +835,7 @@ with tab_info:
         st.write("👩‍💻 **Sophie Hartwig**")
         st.write("👨‍💻 **Ben Henkel**")
         st.write("👨‍💻 **Maximilian Maier**")
-        st.caption("Hanns-Seidel-Gymnasium Aschaffenburg / Germany")
+        st.caption("Hösbach / Germany")
+        st.write("powered by https://de.openfoodfacts.org")
+        st.write("All rights reserved")
+    
