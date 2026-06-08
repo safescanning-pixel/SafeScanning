@@ -2,6 +2,11 @@ import streamlit as st
 import requests
 import streamlit.components.v1 as components
 import time
+import base64
+
+# Fallback-Definition für die Offline-Datenbank, falls sie global noch nicht existiert
+if 'OFFLINE_DATA' not in globals():
+    OFFLINE_DATA = {}
 
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
@@ -103,7 +108,7 @@ st.markdown("""
     .nutri-e { background-color: #E63E11; }
     .nutri-unknown { background-color: #9CA3AF; }
     
-    /* NEU: CSS für Werbebanner */
+    /* Optimierter CSS-Code für die Werbeflächen laut Skizze */
     .ad-banner {
         position: fixed;
         bottom: 0;
@@ -122,28 +127,28 @@ st.markdown("""
     }
     .ad-left-banner {
         position: fixed;
-        top: 25%;
-        left: 10px;
-        width: 180px; /* Geändert: Deutlich breiter für waagerechten Text */
-        height: 150px; /* Geändert: Etwas kürzer in der Höhe, aber insgesamt größeres Feld */
+        top: 20%;
+        left: 15px;
+        width: 150px;
+        height: 450px;
         background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
         color: #6B7280;
         text-align: center;
-        padding: 15px;
+        padding: 8px;
         font-weight: 800;
-        font-size: 14px; /* Geändert: Schrift etwas vergrößert */
-        letter-spacing: 2px;
+        font-size: 13px;
+        letter-spacing: 1px;
         border: 1px solid #d1d5db;
-        border-radius: 12px;
+        border-radius: 16px;
         z-index: 9999;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         display: flex;
         align-items: center;
         justify-content: center;
-        /* writing-mode und text-orientation wurden entfernt, damit es waagerecht ist */
+        overflow: hidden;
     }
     .ad-spacer {
-        height: 70px; /* Verhindert, dass Content vom Banner verdeckt wird */
+        height: 70px; 
         width: 100%;
     }
     </style>
@@ -157,7 +162,6 @@ def throw_confetti():
         """, height=0,
     )
 
-
 if 'lang' not in st.session_state: 
     st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: 
@@ -166,8 +170,10 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 if 'manual_code' not in st.session_state: 
     st.session_state.manual_code = ""
-if 'ad_free' not in st.session_state: # NEU: Status für Werbefreiheit
+if 'ad_free' not in st.session_state: 
     st.session_state.ad_free = False
+if 'ad_image_b64' not in st.session_state:
+    st.session_state.ad_image_b64 = None
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, 
@@ -188,63 +194,23 @@ if 'profile' not in st.session_state:
 
 ui = {
     "Deutsch": {
-        "t1": "👤 Profil", 
-        "t2": "📸 Scanner", 
-        "t3": "⚙️ Einstellungen", 
-        "t4": "ℹ️ Info",
-        "title": "Mein Schutzprofil", 
-        "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", 
-        "save": "Profil speichern",
-        "cat_allergy": "Intoleranzen & Allergien", 
-        "cat_additives": "Zusatzstoffe", 
-        "cat_lifestyle": "Lebensstil & Religion",
-        "laktose": "Laktose / Milch", 
-        "fruktose": "Fruktose", 
-        "histamin": "Histamin", 
-        "sorbit": "Sorbit",
-        "gluten": "Gluten / Zöliakie", 
-        "nuesse": "Schalenfrüchte / Nüsse", 
-        "soja": "Soja", 
-        "erdnuesse": "Erdnüsse",
-        "sulfite": "Sulfite", 
-        "glutamat": "Glutamat", 
-        "vegan": "Vegan", 
-        "vegetarisch": "Vegetarisch", 
-        "halal": "Halal (حلال)", 
-        "koscher": "Koscher (כָּشֵׁר)",
-        "scan_h": "Scanner", 
-        "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
-        "btn_cam_start": "📸 Scanner starten", 
-        "btn_cam_stop": "🛑 Scanner stoppen",
-        "safe": "✅ PRODUKT GEEIGNET!", 
-        "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
-        "warn": "🛑 NICHT GEEIGNET!", 
-        "not_found": "⚠️ Produkt nicht in der Datenbank gefunden.", 
-        "lang_select": "Wähle deine Sprache:", 
-        "saved_msg": "✅ Profil erfolgreich gespeichert!", 
-        "team_title": "👥 Entwickler-Team",
-        "w_laktose": "🥛 Enthält Laktose/Milch", 
-        "w_fruktose": "🍎 Enthält Fruktose", 
-        "w_histamin": "🍷 Histamin-Risiko erkannt", 
-        "w_sorbit": "🍬 Enthält Sorbit (E420)",
-        "w_sulfite": "🧪 Enthält Sulfite (Schwefeldioxid)", 
-        "w_glutamat": "🍕 Enthält Glutamat", 
-        "w_gluten": "🌾 Enthält Gluten", 
-        "w_nuesse": "🌰 Enthält Schalenfrüchte/Nüsse", 
-        "w_soja": "🌱 Enthält Soja", 
-        "w_erdnuesse": "🥜 Enthält Erdnüsse",
-        "w_vegan": "🥩 Nicht Vegan", 
-        "w_vegetarisch": "🥩 Nicht Vegetarisch", 
-        "w_halal": "☪️ Nicht Halal-Konform", 
-        "w_koscher": "✡️ Nicht Koscher-Konform",
-        "placeholder": "Barcode eintippen...", 
-        "hist_title": "🕒 Letzte Scans", 
-        "details": "🔬 Inhaltsstoffe & Analyse",
-        "nutri_title": "🥗 Nährwert-Qualität", 
-        "cal_title": "🔥 Kalorien-Check", 
-        "cal_slider": "Dein täglicher Kalorien-Richtwert (kcal):",
-        "cal_percentage": "Dieses Produkt verbraucht **{:.1f}%** deines Tagesbedarfs pro 100g.", 
-        "de_ingredients": "🇩🇪 Deutsche Zutatenliste (Übersetzt):"
+        "t1": "👤 Profil", "t2": "📸 Scanner", "t3": "⚙️ Einstellungen", "t4": "ℹ️ Info",
+        "title": "Mein Schutzprofil", "sub": "Konfigurieren Sie Ihre Allergien und Unverträglichkeiten", "save": "Profil speichern",
+        "cat_allergy": "Intoleranzen & Allergien", "cat_additives": "Zusatzstoffe", "cat_lifestyle": "Lebensstil & Religion",
+        "laktose": "Laktose / Milch", "fruktose": "Fruktose", "histamin": "Histamin", "sorbit": "Sorbit",
+        "gluten": "Gluten / Zöliakie", "nuesse": "Schalenfrüchte / Nüsse", "soja": "Soja", "erdnuesse": "Erdnüsse",
+        "sulfite": "Sulfite", "glutamat": "Glutamat", "vegan": "Vegan", "vegetarisch": "Vegetarisch", "halal": "Halal (حلال)", "koscher": "Koscher (כָּشֵׁר)",
+        "scan_h": "Scanner", "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
+        "btn_cam_start": "📸 Scanner starten", "btn_cam_stop": "🛑 Scanner stoppen",
+        "safe": "✅ PRODUKT GEEIGNET!", "safe_sub": "Dieses Produkt entspricht vollständig deinem Schutzprofil.",
+        "warn": "🛑 NICHT GEEIGNET!", "not_found": "⚠️ Produkt nicht in der Datenbank gefunden.", 
+        "lang_select": "Wähle deine Sprache:", "saved_msg": "✅ Profil erfolgreich gespeichert!", "team_title": "👥 Entwickler-Team",
+        "w_laktose": "🥛 Enthält Laktose/Milch", "w_fruktose": "🍎 Enthält Fruktose", "w_histamin": "🍷 Histamin-Risiko erkannt", "w_sorbit": "🍬 Enthält Sorbit (E420)",
+        "w_sulfite": "🧪 Enthält Sulfite (Schwefeldioxid)", "w_glutamat": "🍕 Enthält Glutamat", "w_gluten": "🌾 Enthält Gluten", "w_nuesse": "🌰 Enthält Schalenfrüchte/Nüsse", "w_soja": "🌱 Enthält Soja", "w_erdnuesse": "🥜 Enthält Erdnüsse",
+        "w_vegan": "🥩 Nicht Vegan", "w_vegetarisch": "🥩 Nicht Vegetarisch", "w_halal": "☪️ Nicht Halal-Konform", "w_koscher": "✡️ Nicht Koscher-Konform",
+        "placeholder": "Barcode eintippen...", "hist_title": "🕒 Letzte Scans", "details": "🔬 Inhaltsstoffe & Analyse",
+        "nutri_title": "🥗 Nährwert-Qualität", "cal_title": "🔥 Kalorien-Check", "cal_slider": "Dein täglicher Kalorien-Richtwert (kcal):",
+        "cal_percentage": "Dieses Produkt verbraucht **{:.1f}%** deines Tagesbedarfs pro 100g.", "de_ingredients": "🇩🇪 Deutsche Zutatenliste (Übersetzt):"
     },
     "English": {
         "t1": "👤 Profile", "t2": "📸 Scanner", "t3": "⚙️ Settings", "t4": "ℹ️ Info",
@@ -315,7 +281,7 @@ ui = {
         "safe": "✅ 产品安全！", "safe_sub": "该产品完全符合您的安全配置。",
         "warn": "🛑 不适用！", "not_found": "⚠️ 未找到该产品。",
         "lang_select": "选择语言:", "saved_msg": "✅ 保存成功！", "team_title": "👥 开发团队",
-        "w_laktose": "🥛 含有乳糖", "w_fruktose": "🍎 含有果糖", "w_histamin": "🍷 存在组胺", "w_sorbit": "🍬 含有山梨糖醇",
+        "w_laktose": "🥛 含有乳糖", "w_fruktose": "🍎 含有过糖", "w_histamin": "🍷 存在组胺", "w_sorbit": "🍬 含有山梨糖醇",
         "w_sulfite": "🧪 含有亚硫酸盐", "w_glutamat": "🍕 含有谷氨酸钠", "w_gluten": "🌾 含有麸质", "w_nuesse": "🌰 含有坚果", "w_soja": "🌱 含有大豆", "w_erdnuesse": "🥜 含有花生",
         "w_vegan": "🥩 非纯素食", "w_vegetarisch": "🥩 非素食", "w_halal": "☪️ 不符合清真", "w_koscher": "✡️ 不符合犹太洁食",
         "placeholder": "输入条形码...", "hist_title": "🕒 历史", "details": "🔬 成分与分析",
@@ -410,7 +376,7 @@ ui = {
         "safe": "✅ SEGURO!", "safe_sub": "Conformidade com o perfil.",
         "warn": "🛑 NÃO COMPATÍVEL!", "not_found": "⚠️ Produto não encontrado.",
         "lang_select": "Idioma:", "saved_msg": "✅ Salvo com sucesso!", "team_title": "👥 Equipa",
-        "w_laktose": "🥛 Contém lactose", "w_fruktose": "🍎 Contém frutose", "w_histamin": "🍷 Risco de histamina", "w_sorbit": "🍬 Contém sorbitol",
+        "w_laktose": "🥛 Contém lactose", "w_fruktose": "🍎 Contém frutose", "w_histamin": "🍷 Risco de imagem", "w_sorbit": "🍬 Contém sorbitol",
         "w_sulfite": "🧪 Contém sulfitos", "w_glutamat": "🍕 Contém glutamato", "w_gluten": "🌾 Contém glúten", "w_nuesse": "🌰 Contém nozes", "w_soja": "🌱 Contém soja", "w_erdnuesse": "🥜 Contém amendoins",
         "w_vegan": "🥩 Não Vegano", "w_vegetarisch": "🥩 Não Vegetariano", "w_halal": "☪️ Não Halal", "w_koscher": "✡️ Não Kosher",
         "placeholder": "Código...", "hist_title": "🕒 Histórico", "details": "🔬 Ingredientes",
@@ -449,7 +415,7 @@ ui = {
         "warn": "🛑 적합하지 않음!", "not_found": "⚠️ 제품 없음.",
         "lang_select": "언어:", "saved_msg": "✅ 저장됨!", "team_title": "👥 개발 팀",
         "w_laktose": "🥛 유당 포함", "w_fruktose": "🍎 과당 포함", "w_histamin": "🍷 히스타민 위험", "w_sorbit": "🍬 소르비톨 포함",
-        "w_sulfite": "🧪 아황산염 포함", "w_glutamat": "🍕 글루타민 포함", "w_gluten": "🌾 글루텐 포함", "w_nuesse": "🌰 견과류 포함", "w_soja": "🌱 대두 포함", "w_erdnuesse": "🥜 땅콩 포함",
+        "w_sulfite": "🧪 아황산염 포함", "w_glutamat": "🍕 글루타민 포함", "w_gluten": "🌾 글루텐 포함", "w_nuesse": "🌰 견과류 포함", "w_soja": "🌱 대두 포함", "w_erdnuesse": "땅콩 포함",
         "w_vegan": "🥩 비건 아님", "w_vegetarisch": "🥩 채식 아님", "w_halal": "☪️ 할랄 아님", "w_koscher": "✡️ 코셔 아님",
         "placeholder": "바코드...", "記録": "🕒 기록", "details": "🔬 성분",
         "nutri_title": "🥗 영양", "cal_title": "🔥 칼로리", "cal_slider": "하루 목표 (kcal):",
@@ -499,8 +465,6 @@ def translate_ingredients_to_de(text):
     for eng, de in INGREDIENTS_DICT.items():
         text_lower = text_lower.replace(eng, de)
     return text_lower.capitalize()
-
-
 
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
@@ -556,7 +520,6 @@ with tab_scanner:
                 st.session_state.cam_on = False
                 st.rerun()
             
-
             with st.container(border=True):
                 components.html("""
 <style>
@@ -745,7 +708,6 @@ setTimeout(startScanner, 400);
                 else:
                     st.error(t["not_found"])
 
-    
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
@@ -753,7 +715,6 @@ setTimeout(startScanner, 400);
             if st.button(f"▫️ {item['name']} ({item['code']})", key=f"hist_{item['code']}", help="Erneut prüfen"):
                 st.session_state.manual_code = item['code']
                 st.rerun()
-
 
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
@@ -765,7 +726,6 @@ with tab_settings:
             st.session_state.lang = new_lang
             st.rerun()
             
-
     with st.container(border=True):
         st.markdown(f"<h4>🚫 Werbefreie Version</h4>", unsafe_allow_html=True)
         if not st.session_state.ad_free:
@@ -787,6 +747,26 @@ with tab_settings:
                     st.rerun()
                 else:
                     st.error("❌ Ungültiger Code.")
+            
+            # Ausblendbarer Bereich zum Festlegen des Werbebanner-Bildes
+            st.markdown("---")
+            with st.expander("📐 Linkes Werbebanner anpassen", expanded=False):
+                st.markdown("<p style='text-align:left; font-size:13px;'>Lade hier ein Bild hoch, welches in der linken Werbefläche platziert wird:</p>", unsafe_allow_html=True)
+                uploaded_ad_file = st.file_uploader("Bild hochladen (PNG, JPG, JPEG)", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+                if uploaded_ad_file is not None:
+                    file_bytes = uploaded_ad_file.read()
+                    encoded_img = base64.b64encode(file_bytes).decode("utf-8")
+                    st.session_state.ad_image_b64 = f"data:{uploaded_ad_file.type};base64,{encoded_img}"
+                    st.success("Bild geladen!")
+                    time.sleep(0.5)
+                    st.rerun()
+                
+                if st.session_state.ad_image_b64:
+                    if st.button("Bild entfernen (Standardtext nutzen)"):
+                        st.session_state.ad_image_b64 = None
+                        st.success("Bild zurückgesetzt.")
+                        time.sleep(0.5)
+                        st.rerun()
         else:
             st.success("✨ Du nutzt bereits die werbefreie Pro-Version. Danke!")
 
@@ -805,14 +785,20 @@ with tab_info:
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
 
-
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
-    st.markdown("""
+    
+    # Generiere HTML-Inhalt für das linke Banner (Bild oder Text)
+    if st.session_state.ad_image_b64:
+        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" />'
+    else:
+        left_banner_content = '✨ WERBUNG ✨'
+        
+    st.markdown(f"""
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
         </div>
         <div class="ad-left-banner">
-            ✨ WERBUNG ✨
+            {left_banner_content}
         </div>
     """, unsafe_allow_html=True)
