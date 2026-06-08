@@ -3,13 +3,8 @@ import requests
 import streamlit.components.v1 as components
 import time
 
-# ==========================================
-# 1. INITIALISIERUNG & SEITEN-KONFIGURATION
-# ==========================================
 st.set_page_config(page_title="AllergyShield Pro", page_icon="🛡️", layout="centered")
 
-# URL-Parameter sofort zu Beginn verarbeiten, um Weiterleitungs-Schleifen zu vermeiden
-# Das funktioniert jetzt nahtlos im selben Tab, sodass alle Einstellungen erhalten bleiben!
 if "scanned_barcode" in st.query_params:
     scanned = st.query_params.get("scanned_barcode")
     if scanned:
@@ -17,9 +12,6 @@ if "scanned_barcode" in st.query_params:
         st.session_state.cam_on = False  
         st.query_params.clear()  
 
-# ==========================================
-# 2. STYLING (CSS)
-# ==========================================
 st.markdown("""
     <style>
     .stApp { 
@@ -121,9 +113,6 @@ def throw_confetti():
         """, height=0,
     )
 
-# ==========================================
-# 3. SESSION STATES
-# ==========================================
 if 'lang' not in st.session_state: 
     st.session_state.lang = "Deutsch"
 if 'cam_on' not in st.session_state: 
@@ -150,9 +139,6 @@ if 'profile' not in st.session_state:
         "koscher": False
     }
 
-# ==========================================
-# 4. MULTILINGUALE DATENBANK (UI TEXTE)
-# ==========================================
 ui = {
     "Deutsch": {
         "t1": "👤 Profil", 
@@ -178,7 +164,7 @@ ui = {
         "vegan": "Vegan", 
         "vegetarisch": "Vegetarisch", 
         "halal": "Halal (حلال)", 
-        "koscher": "Koscher (כָּشֵׁר)",
+        "koscher": "Koscher (כָּشֵׁر)",
         "scan_h": "Scanner", 
         "scan_p": "Nutzen Sie die Kamera oder geben Sie den Code manuell ein",
         "btn_cam_start": "📸 Scanner starten", 
@@ -304,7 +290,7 @@ ui = {
         "w_laktose": "🥛 Содержит лактозу", "w_fruktose": "🍎 Содержит фруктозу", "w_histamin": "🍷 Риск гистамина", "w_sorbit": "🍬 Содержит сорбит",
         "w_sulfite": "🧪 Содержит сульфиты", "w_glutamat": "🍕 Содержит глутамат", "w_gluten": "🌾 Содержит глютен", "w_nuesse": "🌰 Содержит орехи", "w_soja": "🌱 Содержит сою", "w_erdnuesse": "🥜 Содержит арахис",
         "w_vegan": "🥩 Не веганский", "w_vegetarisch": "🥩 Не вегетарианский", "w_halal": "☪️ Не халяльно", "w_koscher": "✡️ Не кошерно",
-        "placeholder": "Штрихкод...", "hist_title": "🕒 История", "details": "🔬 Ингредиенты",
+        "placeholder": "Штрихкод...", "Cap": "🕒 История", "details": "🔬 Ингредиенты",
         "nutri_title": "🥗 Питательность", "cal_title": "🔥 Калории", "cal_slider": "Суточная норма (ккал):",
         "cal_percentage": "Расходует **{:.1f}%** суточной нормы.", "de_ingredients": "🇩🇪 Ингредиенты:"
     },
@@ -373,7 +359,7 @@ ui = {
         "gluten": "Glúten", "nuesse": "Nozes", "soja": "Soja", "erdnuesse": "Amendoins",
         "sulfite": "Sulfitos", "glutamat": "Glutamato", "vegan": "Vegano", "vegetarisch": "Vegetariano", "halal": "Halal", "koscher": "Kosher",
         "scan_h": "Scanner", "scan_p": "Use a câmara",
-        "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "🛑 Parar",
+        "btn_cam_start": "📸 Iniciar Scanner", "btn_cam_stop": "Parar",
         "safe": "✅ SEGURO!", "safe_sub": "Conformidade com o perfil.",
         "warn": "🛑 NÃO COMPATÍVEL!", "not_found": "⚠️ Produto não encontrado.",
         "lang_select": "Idioma:", "saved_msg": "✅ Salvo com sucesso!", "team_title": "👥 Equipa",
@@ -381,7 +367,7 @@ ui = {
         "w_sulfite": "🧪 Contém sulfitos", "w_glutamat": "🍕 Contém glutamato", "w_gluten": "🌾 Contém glúten", "w_nuesse": "🌰 Contém nozes", "w_soja": "🌱 Contém soja", "w_erdnuesse": "🥜 Contém amendoins",
         "w_vegan": "🥩 Não Vegano", "w_vegetarisch": "🥩 Não Vegetariano", "w_halal": "☪️ Não Halal", "w_koscher": "✡️ Não Kosher",
         "placeholder": "Código...", "hist_title": "🕒 Histórico", "details": "🔬 Ingredientes",
-        "nutri_title": "🥗 Nutrição", "cal_title": "🔥 Calorias", "cal_slider": "Meta calórica (kcal):",
+        "nutri_title": "🥗 Nutrição", "cal_title": "🔥 Calorías", "cal_slider": "Meta calórica (kcal):",
         "cal_percentage": "Consome **{:.1f}%** do seu orçamento.", "de_ingredients": "🇩🇪 Ingrédients:"
     },
     "ไทย": {
@@ -426,9 +412,6 @@ ui = {
 
 t = ui.get(st.session_state.lang, ui["Deutsch"])
 
-# ==========================================
-# 5. ÜBERSETZUNGS-ENGINE (ENG -> DEUTSCH)
-# ==========================================
 INGREDIENTS_DICT = {
     "sugar": "Zucker", "palm oil": "Palmöl", "hazelnuts": "Haselnüsse", "skimmed milk powder": "Magermilchpulver",
     "fat-reduced cocoa": "fettarmer Kakao", "emulsifier": "Emulgator", "lecithins": "Lecithine", "soya": "Soja",
@@ -470,9 +453,6 @@ def translate_ingredients_to_de(text):
         text_lower = text_lower.replace(eng, de)
     return text_lower.capitalize()
 
-# ==========================================
-# 6. ERWEITERTE OFFLINE DATENBANK
-# ==========================================
 OFFLINE_DATA = {
     "3017620425035": {
         "product_name": "Nutella", 
@@ -553,12 +533,8 @@ OFFLINE_DATA = {
     }
 }
 
-# ==========================================
-# 7. TAB-LAYOUT DER BENUTZEROBERFLÄCHE
-# ==========================================
 tab_profil, tab_scanner, tab_settings, tab_info = st.tabs([t["t1"], t["t2"], t["t3"], t["t4"]])
 
-# --- TAB 1: SCHUTZPROFIL ---
 with tab_profil:
     st.markdown(f"<h1>🛡️<br>{t['title']}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['sub']}</p>", unsafe_allow_html=True)
@@ -589,7 +565,6 @@ with tab_profil:
     if st.button(f"💾 {t['save']}"):
         st.success(t["saved_msg"])
 
-# --- TAB 2: LIVE-SCANNER & AUSWERTUNG ---
 with tab_scanner:
     st.markdown(f"<h2>{t['scan_h']}</h2>", unsafe_allow_html=True)
     st.markdown(f"<p>{t['scan_p']}</p>", unsafe_allow_html=True)
@@ -610,9 +585,6 @@ with tab_scanner:
                 st.session_state.cam_on = False
                 st.rerun()
             
-            # -------------------------------------------------------------
-            # PROFESSIONELLER SCANNER - VOLLAUTOMATISCH OHNE ENTER / REFRESH
-            # -------------------------------------------------------------
             with st.container(border=True):
                 components.html("""
 <style>
@@ -670,15 +642,12 @@ function startScanner() {
                 if (targetInput) {
                     targetInput.focus();
                     
-                    // React-kompatibles Setzen des Wertes
                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
                     nativeInputValueSetter.call(targetInput, finalCode);
                     
-                    // Events abfeuern, um Datensynchronisation anzustoßen
                     targetInput.dispatchEvent(new Event('input', { bubbles: true }));
                     targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                     
-                    // Enter-Simulations-Event für absolute Sicherheit
                     const enterEvent = new KeyboardEvent('keydown', { 
                         bubbles: true, 
                         cancelable: true, 
@@ -689,7 +658,6 @@ function startScanner() {
                     });
                     targetInput.dispatchEvent(enterEvent);
                     
-                    // Der magische Kniff: Das Verlassen des Feldes (blur) zwingt Streamlit zum sofortigen Submit!
                     setTimeout(() => {
                         targetInput.blur();
                     }, 50);
@@ -711,7 +679,6 @@ setTimeout(startScanner, 400);
     else:
         st.session_state.cam_on = False
 
-    # VERARBEITUNG UND ALGORITHMUS NACH ERFOLGREICHEM SCAN
     if barcode_input:
         barcode = "".join(filter(str.isdigit, str(barcode_input)))
         
@@ -797,7 +764,7 @@ setTimeout(startScanner, 400);
                     
                     st.write("")
                     with st.expander(t["details"]):
-                        if is_offline: st.caption("ℹ️ Offline-Testdatenbank aktiv.")
+                        if is_offline: st.caption("ℹ️ Offline-Testdatenbank active.")
                         st.write(f"**Original Zutaten:** {raw_ingredients if raw_ingredients else 'Keine Angaben verfügbar.'}")
                         
                         de_translated = translate_ingredients_to_de(raw_ingredients)
@@ -805,7 +772,6 @@ setTimeout(startScanner, 400);
                 else:
                     st.error(t["not_found"])
 
-    # SCAN-HISTORIE ANZEIGEN
     if st.session_state.history:
         st.write("")
         st.markdown(f"<h3>🕒 {t['hist_title']}</h3>", unsafe_allow_html=True)
@@ -814,7 +780,6 @@ setTimeout(startScanner, 400);
                 st.session_state.manual_code = item['code']
                 st.rerun()
 
-# --- TAB 3: EINSTELLUNGEN ---
 with tab_settings:
     st.markdown(f"<h2>{t['t3']}</h2>", unsafe_allow_html=True)
     with st.container(border=True):
@@ -825,7 +790,6 @@ with tab_settings:
             st.session_state.lang = new_lang
             st.rerun()
 
-# --- TAB 4: LIZENZ & ENTWICKLER-INFO ---
 with tab_info:
     with st.container(border=True):
         st.markdown(f"<h2>{t['team_title']}</h2>", unsafe_allow_html=True)
@@ -840,5 +804,3 @@ with tab_info:
         st.write("Contact: safescanning@gmail.com")
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
-        
-    
