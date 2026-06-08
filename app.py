@@ -4,7 +4,6 @@ import streamlit.components.v1 as components
 import time
 import base64
 
-# Fallback-Definition für die Offline-Datenbank, falls sie global noch nicht existiert
 if 'OFFLINE_DATA' not in globals():
     OFFLINE_DATA = {}
 
@@ -788,11 +787,6 @@ with tab_info:
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
     
-    # Generiere HTML-Inhalt für das linke Banner (Bild oder Text)
-    if st.session_state.ad_image_b64:
-        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" />'
-    else:
-        left_banner_content = '✨ WERBUNG ✨'
         
     st.markdown(f"""
         <div class="ad-banner">
