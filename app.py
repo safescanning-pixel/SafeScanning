@@ -834,7 +834,7 @@ with tab_info:
         st.write("👨‍💻 **Benjamin Mehling**")
         st.write("👩‍💻 **Sophie Hartwig**")
         st.write("👨‍💻 **Ben Henkel**")
-        st.write("👨‍💻 **Maximilian Maier**")
+        st.write("👨‍💻 **Maximilian Mayr**")
         st.caption("Hösbach / Germany")
         st.write(" ")
         st.write("Contact: safescanning@gmail.com")
