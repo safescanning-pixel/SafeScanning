@@ -128,8 +128,8 @@ st.markdown("""
         position: fixed;
         top: 20%;
         left: 15px;
-        width: 150px;
-        height: 450px;
+        width: 225px;
+        height: 630px;
         background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
         color: #6B7280;
         text-align: center;
