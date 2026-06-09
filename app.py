@@ -128,8 +128,8 @@ st.markdown("""
         position: fixed;
         top: 20%;
         left: 15px;
-        width: 150px;
-        height: 450px;
+        width: 200px;
+        height: 600px;
         background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
         color: #6B7280;
         text-align: center;
@@ -769,7 +769,7 @@ with tab_info:
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
     if st.session_state.ad_image_b64:
-        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px;" />'
+        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 60px;" />'
     else:
         left_banner_content = '✨ WERBUNG ✨'
         
