@@ -794,7 +794,6 @@ if not st.session_state.ad_free:
     bild_url = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=200&h=600&q=80"
     
     left_banner_content = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;" />'
-        
     st.markdown(f"""
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
