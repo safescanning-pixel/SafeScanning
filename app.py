@@ -193,8 +193,6 @@ if 'manual_code' not in st.session_state:
     st.session_state.manual_code = ""
 if 'ad_free' not in st.session_state: 
     st.session_state.ad_free = False
-if 'ad_image_b64' not in st.session_state:
-    st.session_state.ad_image_b64 = None
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, 
@@ -788,12 +786,14 @@ with tab_info:
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
 
+# --- WERBEBEREICH AM ENDE ---
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
-    if st.session_state.ad_image_b64:
-        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 60px;" />'
-    else:
-        left_banner_content = '✨ WERBUNG ✨'
+    
+    # Hier kannst du einfach den Link zu deinem hochgeladenen Bild einfügen!
+    bild_url = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=200&h=600&q=80"
+    
+    left_banner_content = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;" />'
         
     st.markdown(f"""
         <div class="ad-banner">
