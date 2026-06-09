@@ -128,30 +128,8 @@ st.markdown("""
         position: fixed;
         top: 20%;
         left: 15px;
-        width: 200px;
-        height: 600px;
-        background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
-        color: #6B7280;
-        text-align: center;
-        padding: 8px;
-        font-weight: 800;
-        font-size: 13px;
-        letter-spacing: 1px;
-        border: 1px solid #d1d5db;
-        border-radius: 16px;
-        z-index: 9999;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-        .ad-right-banner {
-        position: fixed;
-        top: 20%;
-        left: 15px;
-        width: 200px;
-        height: 600px;
+        width: 150px;
+        height: 450px;
         background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
         color: #6B7280;
         text-align: center;
@@ -193,6 +171,8 @@ if 'manual_code' not in st.session_state:
     st.session_state.manual_code = ""
 if 'ad_free' not in st.session_state: 
     st.session_state.ad_free = False
+if 'ad_image_b64' not in st.session_state:
+    st.session_state.ad_image_b64 = None
 if 'profile' not in st.session_state:
     st.session_state.profile = {
         "laktose": False, 
@@ -786,14 +766,13 @@ with tab_info:
         st.write("powered by https://de.openfoodfacts.org")
         st.write("All rights reserved")
 
-# --- WERBEBEREICH AM ENDE ---
 if not st.session_state.ad_free:
     st.markdown("<div class='ad-spacer'></div>", unsafe_allow_html=True)
-    
-    # Hier kannst du einfach den Link zu deinem hochgeladenen Bild einfügen!
-    bild_url = "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=200&h=600&q=80"
-    
-    left_banner_content = f'<img src="{bild_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;" />'
+    if st.session_state.ad_image_b64:
+        left_banner_content = f'<img src="{st.session_state.ad_image_b64}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" />'
+    else:
+        left_banner_content = '✨ WERBUNG ✨'
+        
     st.markdown(f"""
         <div class="ad-banner">
             ✨ HIER KÖNNTE IHRE WERBUNG STEHEN ✨
