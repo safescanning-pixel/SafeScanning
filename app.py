@@ -146,6 +146,28 @@ st.markdown("""
         justify-content: center;
         overflow: hidden;
     }
+        .ad-right-banner {
+        position: fixed;
+        top: 20%;
+        left: 15px;
+        width: 200px;
+        height: 600px;
+        background: linear-gradient(180deg, #f3f4f6, #e5e7eb, #f3f4f6);
+        color: #6B7280;
+        text-align: center;
+        padding: 8px;
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: 1px;
+        border: 1px solid #d1d5db;
+        border-radius: 16px;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
     .ad-spacer {
         height: 70px; 
         width: 100%;
